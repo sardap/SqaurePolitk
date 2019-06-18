@@ -27,9 +27,28 @@ class PeopleInfo
 
 	List<BeliefControler> _posLeaning = new List<BeliefControler>();
 	List<BeliefControler> _negLeaning = new List<BeliefControler>();
+	float _totalLeaning = 0;
+
+	public float MaxTotalLeaning
+	{
+		get; set;
+	}
+
+	public float TotalLeaning
+	{
+		get
+		{
+			return _totalLeaning;
+		}
+	}
 
 	PeopleInfo()
 	{
+	}
+
+	public void RegisterChange(float newValue)
+	{
+		_totalLeaning += newValue;
 	}
 
 	public void RegstierMax(BeliefControler beliefControler)

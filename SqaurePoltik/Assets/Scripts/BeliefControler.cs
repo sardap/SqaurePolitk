@@ -37,16 +37,20 @@ public class BeliefControler : MonoBehaviour
 			}
 			set
 			{
-				_value = value;
+				if (value > MAX_RIGHT)
+				{
+					value = MAX_RIGHT;
+				}
+				else if (value < MAX_LEFT)
+				{
+					value = MAX_LEFT;
+				}
 
-				if (_value >= MAX_RIGHT)
-				{
-					_value = MAX_RIGHT;
-				}
-				else if (_value <= MAX_LEFT)
-				{
-					_value = MAX_LEFT;
-				}
+				float updateValue = _value - value;
+
+				PeopleInfo.Instance.RegisterChange(updateValue);
+
+				_value = value;
 			}
 		}
 		public string name { get; set; }
@@ -132,7 +136,7 @@ public class BeliefControler : MonoBehaviour
 	void ReactToBeliefChange()
 	{
 		UpdatePassionLevel();
-		UpdateColor();
+		UpdateColor(TotalLeaning);
 	}
 
 	void UpdatePassionLevel()
@@ -199,6 +203,8 @@ public class BeliefControler : MonoBehaviour
 		_stubones = Random.Range(MAX_CONVINCING / 2, MAX_CONVINCING * _modifer);
 		_personalLeaning = Random.Range(MAX_LEFT * _modifer, MAX_RIGHT * _modifer);
 
+		PeopleInfo.Instance.MaxTotalLeaning += MAX_RIGHT;
+
 		while (_beliefList.Count < convincingVal)
 		{
 			string nextName = GetBeleifName();
@@ -211,9 +217,9 @@ public class BeliefControler : MonoBehaviour
 		ReactToBeliefChange();
 	}
 
-	public void UpdateColor()
+	public void UpdateColor(float totalLeaning)
 	{
-		var leaning = TotalLeaning;
+		var leaning = totalLeaning;
 
 		var maxLeaning = convincingVal * System.Math.Abs(MAX_LEFT);
 	
