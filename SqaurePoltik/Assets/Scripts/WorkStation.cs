@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class WorkStation : MonoBehaviour
 {
+	public MarketInfo marketInfo;
+
 	public Vector3 WorkingPostion()
 	{
 		return transform.position;

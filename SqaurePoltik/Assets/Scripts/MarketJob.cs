@@ -8,6 +8,7 @@ using UnityEngine.AI;
 class MarketJob : IJobAction
 {
 	static Color32 _hatColor = Color.magenta;
+	static IFoodCreateInfo[] _foodCreateInfoAry = new IFoodCreateInfo[] { new BunCreateInfo() };
 
 	float _talkingCD;
 
@@ -36,6 +37,11 @@ class MarketJob : IJobAction
 		get;  set;
 	}
 
+	public MarketInfo Market
+	{
+		get; set;
+	}
+
 	public void Start()
 	{
 		_talkingCD = 0;
@@ -44,14 +50,17 @@ class MarketJob : IJobAction
 
 	public void Step()
 	{
-		if(agent.remainingDistance < 0.5f)
+		if(!agent.pathPending && agent.remainingDistance < 0.5f)
 		{
 			_talkingCD -= Time.deltaTime;
 
 			if (_talkingCD < 0)
 			{
 				Helper.CreateTalkingText(camera, HatColor, transform);
-				_talkingCD = 5f;
+
+				var createInfo = Util.RandomElement(_foodCreateInfoAry);
+				Market.MakeFood(createInfo);
+				_talkingCD = createInfo.TimeToCreate;
 			}
 		}
 	}

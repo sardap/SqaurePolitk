@@ -6,9 +6,9 @@ using UnityEngine;
 public class MarketInfo : MonoBehaviour
 {
 	List<Transform> _marketBoxes;
+	Stack<float> _foodStack;
 
 	public List<WorkStation> workStations;
-	public SpawnArea standingArea;
 
 	public Vector3 GetRandomMarketBox()
 	{
@@ -23,10 +23,26 @@ public class MarketInfo : MonoBehaviour
 		return result;
 	}
 
-	private void Awake()
+	public void MakeFood(IFoodCreateInfo foodCreateInfo)
+	{
+		_foodStack.Push(foodCreateInfo.FillingValue);
+	}
+
+	public float ConsumeFood()
+	{
+		if(_foodStack.Count > 0)
+		{
+			return _foodStack.Pop();
+		}
+
+		return 0;
+	}
+
+	void Awake()
 	{
 		_marketBoxes = new List<Transform>();
 		workStations = new List<WorkStation>();
+		_foodStack = new Stack<float>();
 
 		foreach (Transform tr in transform)
 		{

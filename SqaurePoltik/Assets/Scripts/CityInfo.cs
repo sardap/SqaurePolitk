@@ -99,7 +99,8 @@ class CityInfo
 			WorkStation = workStation,
 			camera = camera,
 			transform = worker.transform,
-			agent = agent
+			agent = agent,
+			Market = workStation.marketInfo
 		};
 
 		worker.GiveJob(marketPlace);
