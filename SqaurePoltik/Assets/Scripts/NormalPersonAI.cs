@@ -9,9 +9,10 @@ public class NormalPersonAI : MonoBehaviour
 {
 	const float WORKING_COOLDOWN = 60f;
 	const float SPEEACH_COOLDOWN = 20f;
-	const float TALKING_COOLDOWN = 10f;
+	const float TALKING_COOLDOWN = 60f;
+	const float FOOD_STARVING_THRESHHOLD = 0.4f;
 
-	enum State
+	public enum State
 	{
 		Idling,
 		Wandering,
@@ -21,64 +22,92 @@ public class NormalPersonAI : MonoBehaviour
 		PreparingSpeech,
 		GivingASpeech,
 		RevSpeach,
-		Working
+		Working,
+		FindingFood,
+		ConsumingFood,
+		Dying
 	}
 
 	public class StateMachineVoilation : System.Exception
 	{
-		public StateMachineVoilation(string currentState, string iligealState, string name) : base(string.Format("Frame:{0} {3} Current State {1} ileagal state {2}", Time.frameCount, currentState, iligealState, name))
+		public StateMachineVoilation(string currentState, string iligealState, string name, Stack<State> prevousStates) : base(string.Format("Frame:{0} {3} Current State {1} ileagal state {2} Last 5 States {4}", Time.frameCount, currentState, iligealState, name, LastFiveStates(prevousStates)))
 		{
 
 		}
 	}
 
+	static string LastFiveStates(IEnumerable<State> prevousStates)
+	{
+		string result = "";
+
+		for(int i  = 0; i < 5 && i < prevousStates.Count(); i++)
+		{
+			result += prevousStates.ElementAt(i);
+
+			if(i != 4 || i != prevousStates.Count() - 1)
+			{
+				result += ", ";
+			}
+		}
+
+		return result;
+	}
+
 	static List<NormalPersonAI> personList = new List<NormalPersonAI>();
 
-	static readonly State[] MovableStates = new State[] {State.Wandering, State.PreparingSpeech, State.RevSpeach};
+	static readonly State[] MovableStates = new State[] {State.Wandering, State.PreparingSpeech, State.RevSpeach, State.FindingFood};
 
 	State _state;
 	float _changeCD;
 	float _talkingCD;
+	float _talkingToOtherCD;
 	NormalPersonAI _talkingSubject;
 	NormalPersonAI _speaker;
 	GameObject _line;
 	Stack<NormalPersonAI> _listeners = new Stack<NormalPersonAI>();
 	SpeechAreaInfo _speechArea;
 	Worker _worker;
+	Needs _needs;
+	MarketInfo _targetMarket;
+	Stack<State> _prevousStates;
 
 	public Wander wander;
 	public BeliefControler beliefControler;
 	public NavMeshAgent agent;
 	public new Camera camera;
-	public MeshRenderer speakingHat;
+	public MeshRenderer hat;
 
 	// Start is called before the first frame update
 	void Start()
 	{
+		_prevousStates = new Stack<State>();
 		personList.Add(this);
 		ChangeState(State.Wandering);
-		_talkingCD = Random.Range(0, 120);
+		_talkingToOtherCD = Random.Range(0, 120);
 		_worker = GetComponent<Worker>();
+		_needs = GetComponent<Needs>();
 	}
 
 	void ChangeState(State newState)
 	{
 		if (_state == State.Talking && newState != State.FinshedTalking)
 		{
-			throw new StateMachineVoilation(_state.ToString(), newState.ToString(), gameObject.name);
+			throw new StateMachineVoilation(_state.ToString(), newState.ToString(), gameObject.name, _prevousStates);
 		}
 
 		if (newState == State.Working && _worker.CurrentState != Worker.State.HasJob)
 		{
-			throw new StateMachineVoilation(_state.ToString(), newState.ToString(), gameObject.name);
+			throw new StateMachineVoilation(_state.ToString(), newState.ToString(), gameObject.name, _prevousStates);
 		}
+
+		_prevousStates.Push(newState);
 
 		_state = newState;
 		Debug.LogFormat("Frame:{2} {1} NEW STATE {0} ", newState, gameObject.name, Time.frameCount);
 
 		wander.enabled = _state == State.Wandering;
 
-		agent.isStopped = !(MovableStates.Any(i => _state == i) || _state == State.Working && _worker.job.Walk);
+		agent.isStopped = !(MovableStates.Any(i => _state == i) || _state == State.Working && _worker.Job.Walk);
 
 		if (_state == State.Idling || _state == State.Wandering)
 		{
@@ -92,10 +121,17 @@ public class NormalPersonAI : MonoBehaviour
 		return test.x > 0 && test.x < 1 && test.y > 0 && test.y < 1;
 	}
 
+	bool DepsrateForFood()
+	{
+		var mostDesprateNeed = _needs.MostDesprateNeed();
+		return mostDesprateNeed.GetType() == typeof(FoodNeed) && mostDesprateNeed.Value <= mostDesprateNeed.MaxValue * FOOD_STARVING_THRESHHOLD;
+	}
+
 	// Update is called once per frame
 	void Update()
     {
 		_changeCD -= Time.deltaTime;
+		_talkingToOtherCD -= Time.deltaTime;
 
 		switch (_state)
 		{
@@ -111,27 +147,66 @@ public class NormalPersonAI : MonoBehaviour
 
 				if (_changeCD <= 0)
 				{
+					if (_needs.Die)
+					{
+						ChangeState(State.Dying);
+						break;
+					}
+
 					State newState = State.Idling;
 
-					if(beliefControler.PassionLevel == BeliefControler.EPassionLevel.Max && Random.Range(0, 30) >= 9 && PrepareSpeech())
+					var mostDesprateNeed = _needs.MostDesprateNeed();
+
+					bool eatChance = false;
+
+					if (mostDesprateNeed.GetType() == typeof(FoodNeed))
 					{
-						newState = State.PreparingSpeech;
+
+						if (DepsrateForFood())
+						{
+							eatChance = true;
+						}
+						else if (mostDesprateNeed.Value <= mostDesprateNeed.MaxValue * 0.5)
+						{
+							eatChance = Random.Range(0, 100) >= 50;
+						}
+						else if (mostDesprateNeed.Value <= mostDesprateNeed.MaxValue * 0.7)
+						{
+							eatChance = Random.Range(0, 100) >= 80;
+						}
+
+					}
+
+					if (eatChance)
+					{
+						if (StartFindFood())
+						{
+							newState = State.FindingFood;
+						}
 					}
 					else
 					{
-						if (_worker.CurrentState == Worker.State.Jobless)
+						if (beliefControler.PassionLevel == BeliefControler.EPassionLevel.Max && Random.Range(0, 30) >= 9 && PrepareSpeech())
 						{
-							FindJob();
+							newState = State.PreparingSpeech;
 						}
-
-						if (_worker.CurrentState == Worker.State.HasJob)
+						else
 						{
-							if (Util.RandomBool())
+							if (_worker.CurrentState == Worker.State.Jobless)
 							{
-								StartWork();
-								newState = State.Working;
+								FindJob();
+							}
+
+							if (_worker.CurrentState == Worker.State.HasJob)
+							{
+								if (Util.RandomBool())
+								{
+									StartWork();
+									newState = State.Working;
+								}
 							}
 						}
+
 					}
 
 					ChangeState(newState);
@@ -164,10 +239,10 @@ public class NormalPersonAI : MonoBehaviour
 						Factory.Instance.ReleaseaTalkingLine(ref _line);
 					}
 
-					_talkingCD = TALKING_COOLDOWN;
+					_talkingToOtherCD = TALKING_COOLDOWN;
 
-					speakingHat.enabled = false;
-					speakingHat.material.color = Color.white;
+					hat.enabled = false;
+					hat.material.color = Color.white;
 
 					_talkingSubject = null;
 					ChangeState(State.Wandering);
@@ -211,7 +286,13 @@ public class NormalPersonAI : MonoBehaviour
 				break;
 
 			case State.Working:
-				_worker.job.Step();
+				if (_worker.CurrentState == Worker.State.Jobless)
+				{
+					ChangeState(State.Wandering);
+					break;
+				}
+
+				_worker.Job.Step();
 
 				if (_changeCD <= 0)
 				{
@@ -219,8 +300,77 @@ public class NormalPersonAI : MonoBehaviour
 					ChangeState(State.Wandering);
 				}
 				break;
+
+			case State.FindingFood:
+				if (ReachedTarget())
+				{
+					if (_targetMarket.ConsumeFood(_needs.FoodNeed))
+					{
+						_talkingCD = 5f;
+						hat.material.color = new Color32() { a = byte.MaxValue, g = 255, b = 255 };
+						ChangeState(State.ConsumingFood);
+					}
+					else
+					{
+						StartFindFood();
+					}
+				}
+				break;
+
+			case State.ConsumingFood:
+				_talkingCD -= Time.deltaTime;
+
+				if (_talkingCD <= 0)
+				{
+					if(_needs.FoodNeed.Value < _needs.FoodNeed.MaxValue * 0.9)
+					{
+						StartFindFood();
+						ChangeState(State.FindingFood);
+					}
+					else
+					{
+						_targetMarket = null;
+						hat.enabled = false;
+						ChangeState(State.Wandering);
+					}
+				}
+				break;
+
+			case State.Dying:
+				Die();
+				break;
 		}
     }
+
+	void Die()
+	{
+		Debug.LogFormat("Frame:{1} {0} DIED LAST 5 STATES: {2}", gameObject.name, Time.frameCount, LastFiveStates(_prevousStates));
+		PeopleInfo.Instance.UnregsterMax(beliefControler);
+
+		if(_worker.CurrentState == Worker.State.HasJob)
+		{
+			_worker.QuitJob();
+		}
+
+		Destroy(gameObject);
+	}
+
+	bool StartFindFood()
+	{
+		_targetMarket = CityInfo.Instance.FindClosetMarket(transform);
+
+		if(_targetMarket == null)
+		{
+			return false;
+		}
+
+		agent.SetDestination(_targetMarket.GetPlaceToStand());
+
+		hat.enabled = true;
+		hat.material.color = new Color32() { a = byte.MaxValue, g = 255, b = 100 };
+
+		return true;
+	}
 
 	void FindJob()
 	{
@@ -234,9 +384,10 @@ public class NormalPersonAI : MonoBehaviour
 			var newJob = new FollowerJob()
 			{
 				beliefControler = beliefControler,
-				following = PeopleInfo.Instance.FindClosetToFollow(beliefControler).transform,
 				agent = agent
 			};
+
+			newJob.following = PeopleInfo.Instance.FindClosetToFollow(newJob, beliefControler).transform;
 
 			_worker.GiveJob(newJob);
 		}
@@ -253,7 +404,7 @@ public class NormalPersonAI : MonoBehaviour
 
 	bool ReachedTarget()
 	{
-		return !agent.pathPending && agent.remainingDistance <= 0.01;
+		return !agent.pathPending && agent.remainingDistance <= 0.1;
 	}
 
 	bool PrepareSpeech()
@@ -268,15 +419,15 @@ public class NormalPersonAI : MonoBehaviour
 		_speechArea.Intrest();
 		agent.SetDestination(_speechArea.speakingArea.position);
 
-		speakingHat.enabled = true;
-		speakingHat.material.color = new Color32() { r = byte.MaxValue, g = byte.MaxValue, b = 0, a = byte.MaxValue };
+		hat.enabled = true;
+		hat.material.color = new Color32() { r = byte.MaxValue, g = byte.MaxValue, b = 0, a = byte.MaxValue };
 
 		return true;
 	}
 
 	void StartSpeech()
 	{
-		speakingHat.enabled = false;
+		hat.enabled = false;
 		_changeCD = SPEEACH_COOLDOWN;
 		_talkingCD = 0f;
 		_speechArea.Occupy();
@@ -286,7 +437,7 @@ public class NormalPersonAI : MonoBehaviour
 	void StopSpeech()
 	{
 		beliefControler.StopSpeech();
-		speakingHat.enabled = false;
+		hat.enabled = false;
 
 		while (_listeners.Count > 0)
 		{
@@ -344,24 +495,23 @@ public class NormalPersonAI : MonoBehaviour
 
 	bool CanTalk(NormalPersonAI person)
 	{
-		return person._state == State.Wandering && _talkingCD <= 0;
+		return person._state == State.Wandering && _talkingToOtherCD <= 0 && !DepsrateForFood();
 	}
 
 	void StopWork()
 	{
-		_worker.job.Stop();
-		speakingHat.enabled = false;
+		_worker.Job.Stop();
+		hat.enabled = false;
 	}
 
 	void StartWork()
 	{
 		_changeCD = WORKING_COOLDOWN;
-		ChangeState(State.Working);
 
-		_worker.job.Start();
+		_worker.Job.Start();
 
-		speakingHat.enabled = true;
-		speakingHat.material.color = _worker.job.HatColor;
+		hat.enabled = true;
+		hat.material.color = _worker.Job.HatColor;
 	}
 
 	//Detect collisions between the GameObjects with Colliders attached
@@ -386,11 +536,11 @@ public class NormalPersonAI : MonoBehaviour
 			ChangeState(State.Talking);
 			otherPerson.ChangeState(State.Talking);
 
-			speakingHat.enabled = true;
-			speakingHat.material.color = Color.white;
+			hat.enabled = true;
+			hat.material.color = Color.white;
 
-			otherPerson.speakingHat.enabled = true;
-			otherPerson.speakingHat.material.color = Color.white;
+			otherPerson.hat.enabled = true;
+			otherPerson.hat.material.color = Color.white;
 
 			_talkingSubject = otherPerson;
 			otherPerson._talkingSubject = this;

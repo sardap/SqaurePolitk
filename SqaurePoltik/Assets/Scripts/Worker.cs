@@ -11,7 +11,9 @@ public class Worker : MonoBehaviour
 		DoesntWantJob
 	}
 
-	public IJobAction job;
+	private IJobAction _job;
+
+	public IJobAction Job { get { return _job; } }
 
 	public State CurrentState
 	{
@@ -20,8 +22,18 @@ public class Worker : MonoBehaviour
 
 	public void GiveJob(IJobAction aJob)
 	{
-		job = aJob;
+		Debug.Assert(aJob != null);
+
+		_job = aJob;
+		Job.Worker = this;
 		CurrentState = State.HasJob;
+	}
+
+	public void QuitJob()
+	{
+		Job.Quit();
+		_job = null;
+		CurrentState = State.Jobless;
 	}
 
 	void Start()

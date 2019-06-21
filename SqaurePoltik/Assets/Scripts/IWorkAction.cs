@@ -7,11 +7,15 @@ using UnityEngine;
 
 public interface IJobAction
 {
+	Worker Worker { get; set; }
+
 	void Start();
 
 	void Step();
 
 	void Stop();
+
+	void Quit();
 
 	Color32 HatColor { get; }
 

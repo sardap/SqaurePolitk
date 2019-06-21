@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 1176774824045201186}
   - component: {fileID: 6649252152878879072}
   - component: {fileID: 4582713144740261023}
+  - component: {fileID: 8575180184720768014}
   m_Layer: 0
   m_Name: NormalPerson
   m_TagString: Person
@@ -137,6 +138,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   meshRenderer: {fileID: 8821443831051668953}
   convincingVal: 0
+  follwers: 0
 --- !u!114 &8366516139186064927
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -153,7 +155,7 @@ MonoBehaviour:
   beliefControler: {fileID: 8342881463750872499}
   agent: {fileID: 4396721647136796445}
   camera: {fileID: 0}
-  speakingHat: {fileID: 4621783373409726026}
+  hat: {fileID: 4621783373409726026}
 --- !u!65 &1176774824045201186
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -195,7 +197,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d49171fd3580be94cb02e934ce08f186, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  workStation: {fileID: 0}
+--- !u!114 &8575180184720768014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2457270197507229778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e95878627b50864448e3e83bebe2fb8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &4196517618677347956
 GameObject:
   m_ObjectHideFlags: 0

@@ -60,8 +60,7 @@ class CityInfo
 	Dictionary<IBuilding, IList<GameObject>> _buildings = new Dictionary<IBuilding, IList<GameObject>>();
 
 	List<MarketInfo> _workplaces = new List<MarketInfo>();
-	List<WorkStation> _avalabeWorkstations = new List<WorkStation>();
-	List<WorkStation> _occupyedWorkstations = new List<WorkStation>();
+	HashSet<WorkStation> _avalabeWorkstations = new HashSet<WorkStation>();
 
 	CityInfo()
 	{
@@ -79,7 +78,7 @@ class CityInfo
 		{
 			var workPlace = instance.GetComponent<MarketInfo>();
 			_workplaces.Add(workPlace);
-			_avalabeWorkstations.AddRange(workPlace.workStations);
+			workPlace.workStations.ToList().ForEach(i => _avalabeWorkstations.Add(i));
 		}
 	}
 
@@ -90,9 +89,8 @@ class CityInfo
 			return;
 		}
 
-		var workStation = Util.RandomElement(_avalabeWorkstations);
+		var workStation = Helper.FindClosest(_avalabeWorkstations, worker.transform);
 		_avalabeWorkstations.Remove(workStation);
-		_occupyedWorkstations.Add(workStation);
 
 		var marketPlace = new MarketJob()
 		{
@@ -103,9 +101,32 @@ class CityInfo
 			Market = workStation.marketInfo
 		};
 
+		workStation.Workers++;
+
 		worker.GiveJob(marketPlace);
 	}
 
+	public void ReturnWorkstation(WorkStation workStation)
+	{
+		throw new System.NotImplementedException();
+
+		/*
+		Debug.Assert(_occupyedWorkstations.Contains(workStation));
+
+		_occupyedWorkstations.Remove(workStation);
+		_avalabeWorkstations.Add(workStation);
+
+		*/
+	}
+
+	public MarketInfo FindClosetMarket(Transform finder)
+	{
+		var stockedWorkplaces = _workplaces.ToList();
+		stockedWorkplaces.RemoveAll(i => !i.HasFood());
+		return Helper.FindClosest(stockedWorkplaces, finder);
+	}
+
+	// @TODO: Make this use the helper function
 	public SpeechAreaInfo FindClosetSpeechArea(Transform finder)
 	{
 		Transform tMin = null;

@@ -22,14 +22,14 @@ public class BeliefControler : MonoBehaviour
 	interface IBelief
 	{
 		// Postive Support Neg Reject
-		float value { get; set; }
+		float Value { get; set; }
 	}
 
 	class GenBelief : IBelief
 	{
 		float _value;
 
-		public float value
+		public float Value
 		{
 			get
 			{
@@ -53,12 +53,12 @@ public class BeliefControler : MonoBehaviour
 				_value = value;
 			}
 		}
-		public string name { get; set; }
+		public string Name { get; set; }
 
 		public GenBelief(string aName, float personalLeaning, float modifer)
 		{
-			name = aName;
-			value = personalLeaning + Random.Range(MAX_LEFT * modifer, MAX_RIGHT * modifer);
+			Name = aName;
+			Value = personalLeaning + Random.Range(MAX_LEFT * modifer, MAX_RIGHT * modifer);
 		}
 	}
 
@@ -89,7 +89,7 @@ public class BeliefControler : MonoBehaviour
 
 	public MeshRenderer meshRenderer;
 	public float convincingVal;
-	public int follwers;
+	public List<FollowerJob> follwers { get; set; }
 
 	Dictionary<string, IBelief> _beliefList = new Dictionary<string, IBelief>();
 	MaterialPropertyBlock _propBlock;
@@ -113,7 +113,7 @@ public class BeliefControler : MonoBehaviour
 	{
 		get
 		{
-			return _beliefList.Values.Sum(i => i.value);
+			return _beliefList.Values.Sum(i => i.Value);
 		}
 	}
 
@@ -165,7 +165,7 @@ public class BeliefControler : MonoBehaviour
 			}
 		}
 
-		if(newState == EPassionLevel.Max && follwers >= FOLLWERS_NEEDED_FOR_RIOT)
+		if(newState == EPassionLevel.Max && follwers.Count >= FOLLWERS_NEEDED_FOR_RIOT)
 		{
 
 		}
@@ -177,6 +177,7 @@ public class BeliefControler : MonoBehaviour
 	// Start is called before the first frame update
 	void Start()
 	{
+		follwers = new List<FollowerJob>();
 		_propBlock = new MaterialPropertyBlock();
 
 		var extremeCata = Random.Range(0, 10);
@@ -274,11 +275,11 @@ public class BeliefControler : MonoBehaviour
 			_beliefList.Add(other._speechBelief, new GenBelief(other._speechBelief, _personalLeaning, _modifer));
 		}
 
-		var otherValue = other.SpeechBelief.value;
+		var otherValue = other.SpeechBelief.Value;
 		otherValue *= other.convincingVal / MAX_CONVINCING;
 		otherValue *= _stubones / MAX_CONVINCING;
 
-		_beliefList[other._speechBelief].value += otherValue;
+		_beliefList[other._speechBelief].Value += otherValue;
 
 		UpdatePassionLevel();
 	}
@@ -287,12 +288,24 @@ public class BeliefControler : MonoBehaviour
 	{
 		var speakers = new List<BeliefControler>() { this, other }.OrderByDescending(i => Util.RandomFloat(0, i.convincingVal)).ToArray();
 
-		var otherValue = speakers[1]._beliefList[subject].value;
+		var otherValue = speakers[1]._beliefList[subject].Value;
 		otherValue *= speakers[1].convincingVal / MAX_CONVINCING;
 		otherValue *= speakers[0]._stubones / MAX_CONVINCING;
 
-		speakers[0]._beliefList[subject].value += otherValue;
+		speakers[0]._beliefList[subject].Value += otherValue;
 
 		speakers[0].ReactToBeliefChange();
+	}
+
+	void OnDestroy()
+	{
+		var toDestory = follwers.ToList();
+
+		foreach(var follower in toDestory)
+		{
+			follower.Worker.QuitJob();
+		}
+
+		follwers.Clear();
 	}
 }

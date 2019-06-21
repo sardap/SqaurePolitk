@@ -4,10 +4,29 @@ using UnityEngine;
 
 public class WorkStation : MonoBehaviour
 {
+	int _workers;
+
 	public MarketInfo marketInfo;
 
-	public Vector3 WorkingPostion()
+	public int Workers
 	{
-		return transform.position;
+		get
+		{
+			return _workers;
+		}
+		set
+		{
+			if (_workers >= 1)
+			{
+				throw new System.OverflowException();
+			}
+
+			_workers = value;
+		}
+	}
+
+	void Start()
+	{
+		_workers = 0;
 	}
 }

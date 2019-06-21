@@ -42,10 +42,15 @@ class MarketJob : IJobAction
 		get; set;
 	}
 
+	public Worker Worker
+	{
+		get; set;
+	}
+
 	public void Start()
 	{
 		_talkingCD = 0;
-		agent.SetDestination(WorkStation.WorkingPostion());
+		agent.SetDestination(WorkStation.transform.position);
 	}
 
 	public void Step()
@@ -67,5 +72,10 @@ class MarketJob : IJobAction
 
 	public void Stop()
 	{
+	}
+
+	public void Quit()
+	{
+		CityInfo.Instance.ReturnWorkstation(WorkStation);
 	}
 }

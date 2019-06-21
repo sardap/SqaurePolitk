@@ -18,7 +18,7 @@ public class GlobalLeaningUpdate : MonoBehaviour
 	{
 		var peopleInfo = PeopleInfo.Instance;
 
-		Debug.Assert(peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning < 1);
+		Debug.AssertFormat(peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning > -1 &&  peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning < 1, "FRAME {0} LEANING PERCENT ABOVE 1 {1}", Time.frameCount, peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning);
 
 		var leaning = (peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning);
 		slider.value = -leaning;
@@ -39,14 +39,16 @@ public class GlobalLeaningUpdate : MonoBehaviour
 			rightPercent = (2 - (2 * leftPercent)) / 2;
 		}
 
-		leftText.text = string.Format(leftText.text, (int)System.Math.Round(leftPercent * 100));
-		rightText.text = string.Format(rightText.text, (int)System.Math.Round(rightPercent * 100));
+		leftText.text = (int)System.Math.Round(leftPercent * 100) + "%";
+		rightText.text = (int)System.Math.Round(rightPercent * 100) + "%";
 
 	}
 
 	void Start()
 	{
 		_nextUpdate = 10f;
+		leftText.text = "??%";
+		rightText.text = "??%";
 	}
 
 	// Update is called once per frame

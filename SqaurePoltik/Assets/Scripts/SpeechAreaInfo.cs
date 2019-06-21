@@ -70,6 +70,16 @@ public class SpeechAreaInfo : MonoBehaviour
 			throw new GetPeopleWithoutOccpying();
 		}
 
+		colRego.inside.RemoveWhere(i => i == null);
+
+		foreach(var fuckyou in _servredPeople)
+		{
+			if(fuckyou == null)
+			{
+				_servredPeople.Remove(null);
+			}
+		}
+
 		var personList = colRego.inside.Except(_servredPeople);
 		var result = new Stack<NormalPersonAI>(personList.Count());
 

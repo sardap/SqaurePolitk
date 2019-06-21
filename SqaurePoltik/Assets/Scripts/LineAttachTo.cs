@@ -25,13 +25,13 @@ public class LineAttachTo : MonoBehaviour
 	// Update is called once per frame
 	void Update()
     {
-		if(!CheckVecEqual(targetA.position, _tAPos))
+		if(targetA != null && !CheckVecEqual(targetA.position, _tAPos))
 		{
 			UpdatePos(0, targetA);
 			_tAPos = targetA.position;
 		}
 
-		if (!CheckVecEqual(targetB.position, _tBPos))
+		if (targetB != null && !CheckVecEqual(targetB.position, _tBPos))
 		{
 			UpdatePos(1, targetB);
 			_tBPos = targetB.position;

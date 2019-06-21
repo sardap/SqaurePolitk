@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AI;
 
-class FollowerJob : IJobAction
+public class FollowerJob : IJobAction
 {
 	static Color32 _negColor = Color.red;
 	static Color32 _posColor = Color.blue;
@@ -43,6 +43,16 @@ class FollowerJob : IJobAction
 		{
 			return true;
 		}
+	}
+
+	public Worker Worker
+	{
+		get; set;
+	}
+
+	public void Quit()
+	{
+		following.gameObject.GetComponent<BeliefControler>().follwers.Remove(this);
 	}
 
 	public void Start()

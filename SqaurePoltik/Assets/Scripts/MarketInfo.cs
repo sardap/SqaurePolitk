@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 
 public class MarketInfo : MonoBehaviour
@@ -8,52 +9,51 @@ public class MarketInfo : MonoBehaviour
 	List<Transform> _marketBoxes;
 	Stack<float> _foodStack;
 
-	public List<WorkStation> workStations;
+	public WorkStation[] workStations;
+	public SpawnAreaAgg buyingArea;
+	public TextMeshPro foodCount;
 
-	public Vector3 GetRandomMarketBox()
+	void Awake()
 	{
-		var selected = Util.RandomElement(_marketBoxes);
-		var result = new Vector3()
-		{
-			x = Random.Range(selected.position.x, selected.position.x),
-			y = 0.1f,
-			z = Random.Range(selected.position.z, selected.position.z)
-		};
+		_marketBoxes = new List<Transform>();
+		_foodStack = new Stack<float>();
 
-		return result;
+		UpdateFoodCount();
+	}
+
+	public bool HasFood()
+	{
+		return _foodStack.Count > 0;
 	}
 
 	public void MakeFood(IFoodCreateInfo foodCreateInfo)
 	{
 		_foodStack.Push(foodCreateInfo.FillingValue);
+		UpdateFoodCount();
 	}
 
-	public float ConsumeFood()
+	public bool ConsumeFood(FoodNeed foodNeed)
 	{
 		if(_foodStack.Count > 0)
 		{
-			return _foodStack.Pop();
+			foodNeed.Value += _foodStack.Pop();
+			UpdateFoodCount();
+
+			return true;
 		}
 
-		return 0;
+		return false;
 	}
 
-	void Awake()
+	public Vector3 GetPlaceToStand()
 	{
-		_marketBoxes = new List<Transform>();
-		workStations = new List<WorkStation>();
-		_foodStack = new Stack<float>();
+		return buyingArea.GetRandomPostion();
+	}
 
-		foreach (Transform tr in transform)
-		{
-			if (tr.tag == "MarketBox")
-			{
-				_marketBoxes.Add(tr);
-			}
-			else if (tr.name == "WorkStation")
-			{
-				workStations.Add(tr.gameObject.GetComponent<WorkStation>());
-			}
-		}
+	void UpdateFoodCount()
+	{
+		var foodConsumeAmount = _foodStack.ToList().Sum(i => i);
+
+		foodCount.text = foodConsumeAmount.ToString();
 	}
 }

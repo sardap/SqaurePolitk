@@ -63,12 +63,25 @@ class PeopleInfo
 		}
 	}
 
+	public void UnregsterMax(BeliefControler beliefControler)
+	{
+		if (_posLeaning.Contains(beliefControler))
+		{
+			_posLeaning.Remove(beliefControler);
+		}
+
+		if (_negLeaning.Contains(beliefControler))
+		{
+			_negLeaning.Remove(beliefControler);
+		}
+	}
+
 	public bool MaxForLeaning(BeliefControler beliefControler)
 	{
 		return (beliefControler.TotalLeaning > 0 ? _posLeaning : _negLeaning).Count > 0;
 	}
 
-	public GameObject FindClosetToFollow(BeliefControler beliefControler)
+	public GameObject FindClosetToFollow(FollowerJob newJob, BeliefControler beliefControler)
 	{
 		List<BeliefControler> list = beliefControler.TotalLeaning > 0 ? _posLeaning : _negLeaning;
 
@@ -87,7 +100,7 @@ class PeopleInfo
 			}
 		}
 
-		tMin.follwers++;
+		tMin.follwers.Add(newJob);
 		return tMin.gameObject;
 	}
 }

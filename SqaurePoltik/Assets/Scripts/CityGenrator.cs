@@ -113,6 +113,7 @@ public class CityGenrator : MonoBehaviour
 		};
 
 		var buildingsCreated = new Queue<GameObject>();
+		var toRegstier = new Queue<System.Tuple<CityInfo.BuildingType, IntiBuilding>>();
 
 		int count = 0;
 
@@ -128,11 +129,11 @@ public class CityGenrator : MonoBehaviour
 
 			CityInfo.BuildingType buildingType;
 
-			if (type <= 7)
+			if (type <= 6)
 			{
 				buildingType = CityInfo.BuildingType.NormalBuilding;
 			}
-			else if (type <= 8)
+			else if (type <= 7)
 			{
 				buildingType = CityInfo.BuildingType.Market;
 			}
@@ -142,6 +143,7 @@ public class CityGenrator : MonoBehaviour
 			}
 
 			var building = Instantiate(buildings[buildingType], edge, Quaternion.identity);
+			toRegstier.Enqueue(new System.Tuple<CityInfo.BuildingType, IntiBuilding>(buildingType, building.GetComponent<IntiBuilding>()));
 			CityInfo.Instance.RegsiterBuilding(buildingType, building);
 			building.transform.parent = buildingTransform;
 			building.name += count++;
@@ -156,6 +158,16 @@ public class CityGenrator : MonoBehaviour
 		_wakeup.Release();
 
 		yield return null;
+
+		while(toRegstier.Count > 0)
+		{
+			var current = toRegstier.Dequeue();
+
+			while (!current.Item2.HasStarted)
+				yield return null;
+
+			CityInfo.Instance.RegsiterBuilding(current.Item1, current.Item2.gameObject);
+		}
 
 		GetComponent<NavMeshSurface>().BuildNavMesh();
 

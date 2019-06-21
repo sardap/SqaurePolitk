@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class SpawnAreaAgg : MonoBehaviour
 {
+	public string tagToFind;
+
+	public bool started = false;
+
 	SpawnArea[] _spawnAreaAry;
 
 	public Vector3 GetRandomPostion()
@@ -11,12 +15,21 @@ public class SpawnAreaAgg : MonoBehaviour
 		return Util.RandomElement(_spawnAreaAry).GetRandomPostion();
 	}
 
-	void Awake()
-	{
-		_spawnAreaAry = GetComponentsInChildren<SpawnArea>();
-	}
-
 	void Start()
 	{
+		_spawnAreaAry = GetComponentsInChildren<SpawnArea>();
+		var spawnAreaList = new List<SpawnArea>();
+
+			foreach (var spawn in _spawnAreaAry)
+			{
+				if(tagToFind == "" || spawn.gameObject.tag == tagToFind)
+				{
+					spawnAreaList.Add(spawn);
+				}
+			}
+
+		_spawnAreaAry = spawnAreaList.ToArray();
+
+		started = true;
 	}
 }
