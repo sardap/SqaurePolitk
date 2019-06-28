@@ -8,16 +8,31 @@ public static class Helper
 {
 	public static void CreateTalkingText(Color32 color, Transform transform)
 	{
-		Factory.Instance.GetBusyTalkingText(LatainSenteceCreator.Instance.GetSentence(), color, transform);
+		CreateTalkingText(color, transform, LatainSenteceCreator.Instance.GetSentence());
 	}
 
+	public static void CreateTalkingText(Color32 color, Transform transform, string text)
+	{
+		CreateTalkingText(color, transform.position, text);
+	}
 
-	public static void CreateTalkingText(Camera camera, Color32 color, Transform transform)
+	public static void CreateTalkingText(Color32 color, Vector3 postion, string text)
+	{
+		Factory.Instance.GetBusyTalkingText(text, color, postion);
+	}
+
+	public static void CreateTalkingText(Camera camera, Color32 color, Transform transform, string text)
 	{
 		if (OnCamrea(camera, transform))
 		{
-			CreateTalkingText(color, transform);
+			CreateTalkingText(color, transform, text);
 		}
+
+	}
+
+	public static void CreateTalkingText(Camera camera, Color32 color, Transform transform)
+	{
+		CreateTalkingText(camera, color, transform, LatainSenteceCreator.Instance.GetSentence());
 	}
 
 	public static bool OnCamrea(Camera camera, Transform transform)

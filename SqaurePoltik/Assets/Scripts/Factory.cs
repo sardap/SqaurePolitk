@@ -245,16 +245,21 @@ public class Factory
 		line = null;
 	}
 
-	public GameObject GetBusyTalkingText(string text, Color32 color, Transform transform)
+	public GameObject GetBusyTalkingText(string text, Color32 color, Vector3 position)
 	{
 		var result = _busyTalking.Get();
 
 		var textMeshPro = result.GetComponent<TextMeshPro>();
 		textMeshPro.text = text;
 		textMeshPro.faceColor = color;
-		result.transform.position = new Vector3(transform.position.x, 20, transform.position.z);
+		result.transform.position = new Vector3(position.x, 20, position.z);
 
 		return result;
+	}
+
+	public GameObject GetBusyTalkingText(string text, Color32 color, Transform transform)
+	{
+		return GetBusyTalkingText(text, color, transform.position);
 	}
 
 	public void ReleaseBusyTalkingText(GameObject gameObject)

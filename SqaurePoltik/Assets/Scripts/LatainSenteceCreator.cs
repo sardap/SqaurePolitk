@@ -27,7 +27,6 @@ class LatainSenteceCreator
 
 	ConcurrentStack<string> _sentence = new ConcurrentStack<string>();
 	Semaphore _wakeUp = new Semaphore(1, int.MaxValue);
-	Semaphore _waitForSentence = new Semaphore(0, int.MaxValue);
 	string _dataPath;
 
 	LatainSenteceCreator()
@@ -39,9 +38,11 @@ class LatainSenteceCreator
 
 	public string GetSentence()
 	{
-		_waitForSentence.WaitOne();
-
-		_sentence.TryPop(out string result);
+		if(!_sentence.TryPop(out string result))
+		{
+			_wakeUp.Release();
+			return "";
+		}
 
 		if (_sentence.Count <= 3)
 			_wakeUp.Release();
@@ -84,7 +85,6 @@ class LatainSenteceCreator
 			{
 				_sentence.Push(CreateSentence());
 			}
-			_waitForSentence.Release(_sentence.Count);
 		}
 	}
 

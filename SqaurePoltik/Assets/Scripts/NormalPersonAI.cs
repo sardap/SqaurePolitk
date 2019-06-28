@@ -11,6 +11,7 @@ public class NormalPersonAI : MonoBehaviour
 	const float SPEEACH_COOLDOWN = 20f;
 	const float TALKING_COOLDOWN = 60f;
 	const float FOOD_STARVING_THRESHHOLD = 0.4f;
+	const float SLEEP_STARVING_THRESHHOLD = 0.1f;
 
 	public enum State
 	{
@@ -23,6 +24,8 @@ public class NormalPersonAI : MonoBehaviour
 		Working,
 		FindingFood,
 		ConsumingFood,
+		GoingToBed,
+		Sleeping,
 		Dying
 	}
 
@@ -53,7 +56,7 @@ public class NormalPersonAI : MonoBehaviour
 
 	static List<NormalPersonAI> personList = new List<NormalPersonAI>();
 
-	static readonly State[] MovableStates = new State[] {State.Wandering, State.RevSpeach, State.FindingFood};
+	static readonly State[] MovableStates = new State[] {State.Wandering, State.RevSpeach, State.FindingFood, State.GoingToBed};
 
 	State _state;
 	float _changeCD;
@@ -76,6 +79,8 @@ public class NormalPersonAI : MonoBehaviour
 	public NavMeshAgent agent;
 	public new Camera camera;
 	public MeshRenderer hat;
+
+	public HouseBuilding Home { get; set; }
 
 	// Start is called before the first frame update
 	void Start()
@@ -107,7 +112,10 @@ public class NormalPersonAI : MonoBehaviour
 
 		wander.enabled = _state == State.Wandering;
 
-		agent.isStopped = !(MovableStates.Any(i => _state == i) || _state == State.Working && _worker.Job.Walk);
+		if (agent.enabled)
+		{
+			agent.isStopped = !(MovableStates.Any(i => _state == i) || _state == State.Working && _worker.Job.Walk);
+		}
 
 		if (_state == State.Idling || _state == State.Wandering)
 		{
@@ -121,7 +129,13 @@ public class NormalPersonAI : MonoBehaviour
 		return test.x > 0 && test.x < 1 && test.y > 0 && test.y < 1;
 	}
 
-	bool DepsrateForFood()
+	bool DesperateForSleep()
+	{
+		var mostDesprateNeed = _needs.MostDesprateNeed();
+		return mostDesprateNeed.GetType() == typeof(SleepingNeed) && mostDesprateNeed.Value <= mostDesprateNeed.MaxValue * SLEEP_STARVING_THRESHHOLD;
+	}
+
+	bool DesperateForFood()
 	{
 		var mostDesprateNeed = _needs.MostDesprateNeed();
 		return mostDesprateNeed.GetType() == typeof(FoodNeed) && mostDesprateNeed.Value <= mostDesprateNeed.MaxValue * FOOD_STARVING_THRESHHOLD;
@@ -148,11 +162,12 @@ public class NormalPersonAI : MonoBehaviour
 
 				var mostDesprateNeed = _needs.MostDesprateNeed();
 				bool eatChance = false;
+				bool sleepAddres = false;
 
 				if (mostDesprateNeed.GetType() == typeof(FoodNeed))
 				{
 
-					if (DepsrateForFood())
+					if (DesperateForFood())
 					{
 						eatChance = true;
 					}
@@ -166,8 +181,12 @@ public class NormalPersonAI : MonoBehaviour
 					}
 
 				}
+				else if(mostDesprateNeed.GetType() == typeof(SleepingNeed))
+				{
+					sleepAddres = DesperateForSleep();
+				}
 
-				if (_changeCD <= 0 || eatChance)
+				if (_changeCD <= 0 || eatChance || sleepAddres)
 				{
 					if (_needs.Die)
 					{
@@ -183,6 +202,11 @@ public class NormalPersonAI : MonoBehaviour
 						{
 							newState = State.FindingFood;
 						}
+					}
+					else if (sleepAddres)
+					{
+						GoToBed();
+						newState = State.GoingToBed;
 					}
 					else if(_workingCD <= 0)
 					{
@@ -308,6 +332,32 @@ public class NormalPersonAI : MonoBehaviour
 				}
 				break;
 
+			case State.GoingToBed:
+				if (!agent.pathPending && agent.remainingDistance <= 0.5)
+				{
+					StartSleeping();
+					ChangeState(State.Sleeping);
+				}
+				break;
+
+			case State.Sleeping:
+				_talkingCD -= Time.deltaTime;
+
+				_needs.SleepingNeed.Value += 6 * Time.deltaTime;
+
+				if(_talkingCD <= 0)
+				{
+					Helper.CreateTalkingText(new Color32 { a = 50 }, Home.SleepTalkingPostion(), "zzzzz".Substring(Random.Range(1, 5)));
+					_talkingCD = 5f;
+				}
+
+				if (_needs.SleepingNeed.Value >= _needs.SleepingNeed.MaxValue)
+				{
+					WakeUp();
+					ChangeState(State.Wandering);
+				}
+				break;
+
 			case State.Dying:
 				Die();
 				break;
@@ -325,6 +375,32 @@ public class NormalPersonAI : MonoBehaviour
 		}
 
 		Destroy(gameObject);
+	}
+	void GoToBed()
+	{
+		agent.SetDestination(Home.door.position);
+		hat.enabled = true;
+		hat.material.color = new Color32() { a = byte.MaxValue, r = 25, g = 25, b = 25 };
+	}
+
+	void StartSleeping()
+	{
+		GetComponentsInChildren<MeshRenderer>().ToList().ForEach(i => i.enabled = false);
+		GetComponentsInChildren<Collider>().ToList().ForEach(i => i.enabled = false);
+		GetComponentsInChildren<Rigidbody>().ToList().ForEach(i => i.detectCollisions = false);
+		GetComponentsInChildren<NavMeshAgent>().ToList().ForEach(i => i.enabled = false);
+		_talkingCD = 5f;
+		Home.SleepingCount++;
+	}
+
+	void WakeUp()
+	{
+		GetComponentsInChildren<MeshRenderer>().ToList().ForEach(i => i.enabled = true);
+		GetComponentsInChildren<Collider>().ToList().ForEach(i => i.enabled = true);
+		GetComponentsInChildren<Rigidbody>().ToList().ForEach(i => i.detectCollisions = true);
+		GetComponentsInChildren<NavMeshAgent>().ToList().ForEach(i => i.enabled = true);
+		hat.enabled = false;
+		Home.SleepingCount--;
 	}
 
 	bool StartFindFood()
@@ -422,12 +498,12 @@ public class NormalPersonAI : MonoBehaviour
 
 	bool CanTalk()
 	{
-		return _state == State.Wandering && _talkingToOtherCD <= 0 && !DepsrateForFood();
+		return _state == State.Wandering && _talkingToOtherCD <= 0 && !DesperateForFood();
 	}
 
 	public bool CanRevSpeech()
 	{
-		return (_state == State.Idling || _state == State.Wandering) && !DepsrateForFood();
+		return (_state == State.Idling || _state == State.Wandering) && !DesperateForFood();
 	}
 
 

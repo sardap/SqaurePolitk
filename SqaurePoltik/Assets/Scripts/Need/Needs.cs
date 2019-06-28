@@ -7,25 +7,21 @@ public class Needs : MonoBehaviour
 {
 	const int NEEDS_MAX = 1;
 	const int NEEDS_MIN = 1;
-	const float UPDATE_INTERVAL = 5f;
+	const float UPDATE_INTERVAL = 1f;
 
 	List<INeed> _needLst;
 	float _nextUpdate;
 
 	public FoodNeed FoodNeed { get; set; }
 
+	public SleepingNeed SleepingNeed { get; set; }
+
     // Start is called before the first frame update
     void Start()
     {
 		FoodNeed = new FoodNeed();
-		var newLst = new HashSet<INeed>() { FoodNeed };
-
-		var numberOfNeeds = Random.Range(NEEDS_MIN, NEEDS_MAX);
-
-		while (newLst.Count < numberOfNeeds)
-		{
-			throw new System.NotImplementedException();
-		}
+		SleepingNeed = new SleepingNeed();
+		var newLst = new HashSet<INeed>() { FoodNeed, SleepingNeed };
 
 		_needLst = newLst.ToList();
 
@@ -35,16 +31,14 @@ public class Needs : MonoBehaviour
 
 	public INeed MostDesprateNeed()
 	{
-		_needLst.OrderBy(i => i.Value);
-
-		return _needLst[0];
+		return _needLst.OrderBy(i => i.Value).ToArray()[0];
 	}
 
 	public bool Die
 	{
 		get
 		{
-			return _needLst.Any(i => i.Value < 0 && i.Fatal);
+			return _needLst.Any(i => i.Fatal && i.Value < 0);
 		}
 	}
 

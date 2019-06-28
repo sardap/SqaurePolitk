@@ -188,12 +188,18 @@ public class CityGenrator : MonoBehaviour
 				var person = Instantiate(peopleTypes[Random.Range(0, peopleTypes.Count)], postion, Quaternion.identity);
 				person.name += _personCount++;
 				person.transform.parent = peopleTransform;
-				person.GetComponent<NormalPersonAI>().camera  = mainCamera;
+				person.GetComponent<NormalPersonAI>().camera = mainCamera;
+				person.GetComponent<NormalPersonAI>().Home = building.GetComponent<HouseBuilding>();
 
 			}
 
 			yield return null;
 		}
+	}
+
+	private void Awake()
+	{
+		var work = Factory.Instance;
 	}
 
 	// Start is called before the first frame update
