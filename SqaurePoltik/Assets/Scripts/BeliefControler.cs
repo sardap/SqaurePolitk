@@ -6,7 +6,7 @@ using UnityEngine;
 public class BeliefControler : MonoBehaviour
 {
 	const float MAX_LEFT = -10;
-	const float MAX_RIGHT = 10;
+	public const float MAX_RIGHT = 10;
 	const float MAX_CONVINCING = 100;
 	const int FOLLWERS_NEEDED_FOR_RIOT = 5;
 
@@ -37,18 +37,14 @@ public class BeliefControler : MonoBehaviour
 			}
 			set
 			{
-				if (value > MAX_RIGHT)
+				if(value > MAX_RIGHT)
 				{
 					value = MAX_RIGHT;
 				}
-				else if (value < MAX_LEFT)
+				else if(value < MAX_LEFT)
 				{
 					value = MAX_LEFT;
 				}
-
-				float updateValue = _value - value;
-
-				PeopleInfo.Instance.RegisterChange(updateValue);
 
 				_value = value;
 			}
@@ -135,23 +131,28 @@ public class BeliefControler : MonoBehaviour
 
 	void ReactToBeliefChange()
 	{
-		UpdatePassionLevel();
-		UpdateColor(TotalLeaning);
+		var totalLeaning = TotalLeaning;
+		UpdatePassionLevel(totalLeaning);
+		UpdateColor(totalLeaning);
 	}
 
-	void UpdatePassionLevel()
+	void UpdatePassionLevel(float totalLeaning)
 	{
+		var totalLeaningAbs = System.Math.Abs(totalLeaning);
+
+		var maxBelief = MAX_RIGHT * _beliefList.Count;
+
 		EPassionLevel newState;
 
-		if (convincingVal < MAX_CONVINCING * 0.3)
+		if (totalLeaningAbs < maxBelief * 0.2)
 		{
 			newState = EPassionLevel.Low;
 		}
-		else if (convincingVal < MAX_CONVINCING * 0.5)
+		else if (totalLeaningAbs < maxBelief * 0.4)
 		{
 			newState = EPassionLevel.Med;
 		}
-		else if (convincingVal < MAX_CONVINCING * 0.9)
+		else if (totalLeaningAbs < maxBelief * 0.6 || convincingVal < MAX_CONVINCING * 0.6)
 		{
 			newState = EPassionLevel.High;
 		}
@@ -202,9 +203,29 @@ public class BeliefControler : MonoBehaviour
 
 		convincingVal = Random.Range(0, MAX_CONVINCING * _modifer);
 		_stubones = Random.Range(MAX_CONVINCING / 2, MAX_CONVINCING * _modifer);
-		_personalLeaning = Random.Range(MAX_LEFT * _modifer, MAX_RIGHT * _modifer);
 
-		PeopleInfo.Instance.MaxTotalLeaning += MAX_RIGHT;
+		if (convincingVal < MAX_CONVINCING * 0.5)
+		{
+			_personalLeaning = Random.Range(MAX_LEFT * 0.25f, MAX_RIGHT * 0.25f);
+		}
+		else if(convincingVal < MAX_CONVINCING * 0.7)
+		{
+			_personalLeaning = Random.Range(MAX_LEFT * 0.5f, MAX_RIGHT * 0.5f);
+		}
+		else if (convincingVal < MAX_CONVINCING * 0.95)
+		{
+			var leaning = Random.Range(0, MAX_RIGHT);
+
+			_personalLeaning = Util.RandomBool() ? -leaning : leaning;
+		}
+		else
+		{
+			var leaning = Random.Range(MAX_RIGHT * 0.25f, MAX_RIGHT);
+
+			_personalLeaning = Util.RandomBool() ? -leaning : leaning;
+		}
+
+		PeopleInfo.Instance.RegsiterPerson(this);
 
 		while (_beliefList.Count < convincingVal)
 		{
@@ -281,7 +302,7 @@ public class BeliefControler : MonoBehaviour
 
 		_beliefList[other._speechBelief].Value += otherValue;
 
-		UpdatePassionLevel();
+		ReactToBeliefChange();
 	}
 
 	public void TalkTo(BeliefControler other, string subject)
@@ -307,5 +328,8 @@ public class BeliefControler : MonoBehaviour
 		}
 
 		follwers.Clear();
+
+		PeopleInfo.Instance.UnregsterMax(this);
+		PeopleInfo.Instance.UnregsterPerson(this);
 	}
 }

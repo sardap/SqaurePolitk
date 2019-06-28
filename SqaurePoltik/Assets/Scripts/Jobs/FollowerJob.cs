@@ -50,6 +50,14 @@ public class FollowerJob : IJobAction
 		get; set;
 	}
 
+	public float Length
+	{
+		get
+		{
+			return 20f;
+		}
+	}
+
 	public void Quit()
 	{
 		following.gameObject.GetComponent<BeliefControler>().follwers.Remove(this);

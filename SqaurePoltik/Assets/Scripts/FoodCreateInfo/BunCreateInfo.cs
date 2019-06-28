@@ -9,7 +9,7 @@ class BunCreateInfo : IFoodCreateInfo
 	{
 		get
 		{
-			return Util.RandomFloat(2f, 3f);
+			return Util.RandomFloat(2f, 4f);
 		}
 	}
 

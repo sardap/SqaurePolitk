@@ -7,6 +7,8 @@ using UnityEngine;
 
 public interface IJobAction
 {
+	float Length { get; }
+
 	Worker Worker { get; set; }
 
 	void Start();

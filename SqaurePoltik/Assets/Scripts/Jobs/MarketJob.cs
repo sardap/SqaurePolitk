@@ -47,6 +47,14 @@ class MarketJob : IJobAction
 		get; set;
 	}
 
+	public float Length
+	{
+		get
+		{
+			return 70f;
+		}
+	}
+
 	public void Start()
 	{
 		_talkingCD = 0;

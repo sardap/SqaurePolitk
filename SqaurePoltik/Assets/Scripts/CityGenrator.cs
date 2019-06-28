@@ -129,11 +129,11 @@ public class CityGenrator : MonoBehaviour
 
 			CityInfo.BuildingType buildingType;
 
-			if (type <= 6)
+			if (type <= 7)
 			{
 				buildingType = CityInfo.BuildingType.NormalBuilding;
 			}
-			else if (type <= 7)
+			else if (type <= 8)
 			{
 				buildingType = CityInfo.BuildingType.Market;
 			}

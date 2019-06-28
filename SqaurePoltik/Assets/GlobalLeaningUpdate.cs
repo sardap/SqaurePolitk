@@ -18,7 +18,7 @@ public class GlobalLeaningUpdate : MonoBehaviour
 	{
 		var peopleInfo = PeopleInfo.Instance;
 
-		Debug.AssertFormat(peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning > -1 &&  peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning < 1, "FRAME {0} LEANING PERCENT ABOVE 1 {1}", Time.frameCount, peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning);
+		//Debug.AssertFormat(peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning > -1 &&  peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning < 1, "FRAME {0} LEANING PERCENT ABOVE 1 {1}", Time.frameCount, peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning);
 
 		var leaning = (peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning);
 		slider.value = -leaning;

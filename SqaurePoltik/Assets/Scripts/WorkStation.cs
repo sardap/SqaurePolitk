@@ -16,11 +16,6 @@ public class WorkStation : MonoBehaviour
 		}
 		set
 		{
-			if (_workers >= 1)
-			{
-				throw new System.OverflowException();
-			}
-
 			_workers = value;
 		}
 	}

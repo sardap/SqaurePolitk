@@ -108,15 +108,7 @@ class CityInfo
 
 	public void ReturnWorkstation(WorkStation workStation)
 	{
-		throw new System.NotImplementedException();
-
-		/*
-		Debug.Assert(_occupyedWorkstations.Contains(workStation));
-
-		_occupyedWorkstations.Remove(workStation);
 		_avalabeWorkstations.Add(workStation);
-
-		*/
 	}
 
 	public MarketInfo FindClosetMarket(Transform finder)

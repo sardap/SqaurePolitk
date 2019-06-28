@@ -25,20 +25,25 @@ class PeopleInfo
 		}
 	}
 
+	List<BeliefControler> _allBeliefControlers = new List<BeliefControler>();
+
 	List<BeliefControler> _posLeaning = new List<BeliefControler>();
 	List<BeliefControler> _negLeaning = new List<BeliefControler>();
 	float _totalLeaning = 0;
 
 	public float MaxTotalLeaning
 	{
-		get; set;
+		get
+		{
+			return _allBeliefControlers.Count * BeliefControler.MAX_RIGHT;
+		}
 	}
 
 	public float TotalLeaning
 	{
 		get
 		{
-			return _totalLeaning;
+			return _allBeliefControlers.Sum(i => i.TotalLeaning);
 		}
 	}
 
@@ -46,9 +51,9 @@ class PeopleInfo
 	{
 	}
 
-	public void RegisterChange(float newValue)
+	public void RegsiterPerson(BeliefControler beliefControler)
 	{
-		_totalLeaning += newValue;
+		_allBeliefControlers.Add(beliefControler);
 	}
 
 	public void RegstierMax(BeliefControler beliefControler)
@@ -61,6 +66,13 @@ class PeopleInfo
 		{
 			_negLeaning.Add(beliefControler);
 		}
+
+		Debug.AssertFormat(_posLeaning.All(i => !_negLeaning.Contains(i)), "Frame: {0} Double added {1}", Time.frameCount, beliefControler.gameObject.name);
+	}
+
+	public void UnregsterPerson(BeliefControler beliefControler)
+	{
+		_allBeliefControlers.Remove(beliefControler);
 	}
 
 	public void UnregsterMax(BeliefControler beliefControler)
