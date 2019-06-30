@@ -7,6 +7,8 @@ using UnityEngine.AI;
 
 class MarketJob : IJobAction
 {
+	const float STOP_MAKING_FOOD_THREASHOLD = 2000f;
+
 	static Color32 _hatColor = Color.magenta;
 	static IFoodCreateInfo[] _foodCreateInfoAry = new IFoodCreateInfo[] { new BunCreateInfo() };
 
@@ -85,5 +87,10 @@ class MarketJob : IJobAction
 	public void Quit()
 	{
 		CityInfo.Instance.ReturnWorkstation(WorkStation);
+	}
+
+	public bool JobReady()
+	{
+		return Market.FoodCount < STOP_MAKING_FOOD_THREASHOLD;
 	}
 }

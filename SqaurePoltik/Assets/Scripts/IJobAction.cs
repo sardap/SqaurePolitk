@@ -11,6 +11,8 @@ public interface IJobAction
 
 	Worker Worker { get; set; }
 
+	bool JobReady();
+
 	void Start();
 
 	void Step();
@@ -18,6 +20,7 @@ public interface IJobAction
 	void Stop();
 
 	void Quit();
+
 
 	Color32 HatColor { get; }
 

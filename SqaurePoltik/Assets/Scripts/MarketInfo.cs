@@ -13,6 +13,14 @@ public class MarketInfo : MonoBehaviour
 	public SpawnAreaAgg buyingArea;
 	public TextMeshPro foodCount;
 
+	public float FoodCount
+	{
+		get
+		{
+			return _foodStack.ToList().Sum(i => i);
+		}
+	}
+
 	void Awake()
 	{
 		_marketBoxes = new List<Transform>();
@@ -52,7 +60,7 @@ public class MarketInfo : MonoBehaviour
 
 	void UpdateFoodCount()
 	{
-		var foodConsumeAmount = _foodStack.ToList().Sum(i => i);
+		var foodConsumeAmount = FoodCount;
 
 		foodCount.text = foodConsumeAmount.ToString();
 	}

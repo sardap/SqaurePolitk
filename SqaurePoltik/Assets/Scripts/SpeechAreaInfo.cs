@@ -63,7 +63,7 @@ public class SpeechAreaInfo : MonoBehaviour
 		return standingArea.GetRandomPostion();
 	}
 
-	public IEnumerable<NormalPersonAI> GetPeople()
+	public List<NormalPersonAI> GetPeople()
 	{
 		if (_state != States.Occupied)
 		{
@@ -93,6 +93,6 @@ public class SpeechAreaInfo : MonoBehaviour
 			}
 		}
 
-		return result;
+		return result.ToList();
 	}
 }

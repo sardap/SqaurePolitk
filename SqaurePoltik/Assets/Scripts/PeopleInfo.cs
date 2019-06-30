@@ -27,15 +27,13 @@ class PeopleInfo
 
 	List<BeliefControler> _allBeliefControlers = new List<BeliefControler>();
 
-	List<BeliefControler> _posLeaning = new List<BeliefControler>();
-	List<BeliefControler> _negLeaning = new List<BeliefControler>();
-	float _totalLeaning = 0;
+	Dictionary<BeliefControler, Faction> _factionLst = new Dictionary<BeliefControler, Faction>();
 
 	public float MaxTotalLeaning
 	{
 		get
 		{
-			return _allBeliefControlers.Count * BeliefControler.MAX_RIGHT;
+			return (_allBeliefControlers.Count * BeliefControler.BeliefsCount) * BeliefControler.MAX_RIGHT;
 		}
 	}
 
@@ -58,16 +56,22 @@ class PeopleInfo
 
 	public void RegstierMax(BeliefControler beliefControler)
 	{
-		if (beliefControler.TotalLeaning > 0)
+		if (!_factionLst.ContainsKey(beliefControler))
 		{
-			_posLeaning.Add(beliefControler);
-		}
-		else
-		{
-			_negLeaning.Add(beliefControler);
-		}
+			var newFact = new Faction(beliefControler.TotalLeaning)
+			{
+				Leader = beliefControler.GetComponent<FactionCom>()
+			};
 
-		Debug.AssertFormat(_posLeaning.All(i => !_negLeaning.Contains(i)), "Frame: {0} Double added {1}", Time.frameCount, beliefControler.gameObject.name);
+			_factionLst.Add(beliefControler, newFact);
+		}
+	}
+
+	public void UnregsterMax(BeliefControler beliefControler)
+	{
+		Debug.Assert(_factionLst.ContainsKey(beliefControler));
+		_factionLst[beliefControler].Destroy();
+		_factionLst.Remove(beliefControler);
 	}
 
 	public void UnregsterPerson(BeliefControler beliefControler)
@@ -75,44 +79,36 @@ class PeopleInfo
 		_allBeliefControlers.Remove(beliefControler);
 	}
 
-	public void UnregsterMax(BeliefControler beliefControler)
+	public GameObject FindClosetToFollow(FollowerJob newJob, BeliefControler beliefControler, FactionCom factionCom)
 	{
-		if (_posLeaning.Contains(beliefControler))
+		if(_factionLst.Values.Count == 0)
 		{
-			_posLeaning.Remove(beliefControler);
+			return null;
 		}
 
-		if (_negLeaning.Contains(beliefControler))
+		SortedList<float, Faction> canadiets = new SortedList<float, Faction>();
+
+		Faction tMin = null;
+
+		foreach (var go in _factionLst.Values)
 		{
-			_negLeaning.Remove(beliefControler);
-		}
-	}
+			float diff = Mathf.Abs(go.Leaning - beliefControler.TotalLeaning);
 
-	public bool MaxForLeaning(BeliefControler beliefControler)
-	{
-		return (beliefControler.TotalLeaning > 0 ? _posLeaning : _negLeaning).Count > 0;
-	}
-
-	public GameObject FindClosetToFollow(FollowerJob newJob, BeliefControler beliefControler)
-	{
-		List<BeliefControler> list = beliefControler.TotalLeaning > 0 ? _posLeaning : _negLeaning;
-
-		float minDist = Mathf.Infinity;
-		BeliefControler tMin = null;
-		var currentPos = beliefControler.transform.position;
-
-		foreach (var go in list)
-		{
-			float dist = Vector3.Distance(go.transform.position, currentPos);
-
-			if(dist < minDist)
-			{
-				minDist = dist;
-				tMin = go;
-			}
+			canadiets.Add(diff, go);
 		}
 
-		tMin.follwers.Add(newJob);
-		return tMin.gameObject;
+		int n = (int)Mathf.Max(canadiets.Count * 0.3f, 1f);
+
+		while(canadiets.Count > n)
+		{
+			canadiets.RemoveAt(canadiets.IndexOfValue(canadiets.Last().Value));
+		}
+
+		tMin = Util.Shuffle(canadiets.ToList()).First().Value;
+
+		tMin.Leader.beliefControler.follwers.Add(newJob);
+		factionCom.Faction = tMin;
+		tMin.AddMember(factionCom);
+		return tMin.Leader.beliefControler.gameObject;
 	}
 }

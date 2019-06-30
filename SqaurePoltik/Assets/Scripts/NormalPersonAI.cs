@@ -69,6 +69,7 @@ public class NormalPersonAI : MonoBehaviour
 	Stack<NormalPersonAI> _listeners = new Stack<NormalPersonAI>();
 	Worker _worker;
 	Needs _needs;
+	FactionCom _factionCom;
 
 	MarketInfo _targetMarket { get; set; }
 
@@ -82,6 +83,14 @@ public class NormalPersonAI : MonoBehaviour
 
 	public HouseBuilding Home { get; set; }
 
+	public bool ReadyToBeFollwed
+	{
+		get
+		{
+			return _state != State.Sleeping && _state != State.GoingToBed;
+		}
+	}
+
 	// Start is called before the first frame update
 	void Start()
 	{
@@ -91,6 +100,7 @@ public class NormalPersonAI : MonoBehaviour
 		_talkingToOtherCD = Random.Range(0, 120);
 		_worker = GetComponent<Worker>();
 		_needs = GetComponent<Needs>();
+		_factionCom = GetComponent<FactionCom>();
 	}
 
 	void ChangeState(State newState)
@@ -217,8 +227,15 @@ public class NormalPersonAI : MonoBehaviour
 
 						if (_worker.CurrentState == Worker.State.HasJob)
 						{
-							StartWork();
-							newState = State.Working;
+							if (_worker.Job.JobReady())
+							{
+								StartWork();
+								newState = State.Working;
+							}
+							else
+							{
+								newState = State.Wandering;
+							}
 						}
 					}
 
@@ -288,7 +305,7 @@ public class NormalPersonAI : MonoBehaviour
 				break;
 
 			case State.FindingFood:
-				if (ReachedTarget())
+				if (ReachedTarget(0.5f))
 				{
 					if (_targetMarket.ConsumeFood(_needs.FoodNeed))
 					{
@@ -436,18 +453,19 @@ public class NormalPersonAI : MonoBehaviour
 		}
 		else if(beliefControler.PassionLevel == BeliefControler.EPassionLevel.High)
 		{
-			if(!PeopleInfo.Instance.MaxForLeaning(beliefControler))
-			{
-				return;
-			}
-
 			var newJob = new FollowerJob()
 			{
 				beliefControler = beliefControler,
-				agent = agent
+				agent = agent,
+				FactionCom = _factionCom
 			};
 
-			newJob.following = PeopleInfo.Instance.FindClosetToFollow(newJob, beliefControler).transform;
+			newJob.following = PeopleInfo.Instance.FindClosetToFollow(newJob, beliefControler, _factionCom).transform;
+
+			if(newJob.following == null)
+			{
+				return;
+			}
 
 			_worker.GiveJob(newJob);
 		}
@@ -462,9 +480,9 @@ public class NormalPersonAI : MonoBehaviour
 		Helper.CreateTalkingText(camera, beliefControler.BeliefColor, transform);
 	}
 
-	bool ReachedTarget()
+	bool ReachedTarget(float leanacy = 0.1f)
 	{
-		return !agent.pathPending && agent.remainingDistance <= 0.1;
+		return !agent.pathPending && agent.remainingDistance <= leanacy;
 	}
 
 	public void RevSpeech(MaxJob speaker, Vector3 standingPostion)

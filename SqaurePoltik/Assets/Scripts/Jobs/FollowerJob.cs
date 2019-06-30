@@ -7,12 +7,10 @@ using UnityEngine.AI;
 
 public class FollowerJob : IJobAction
 {
-	static Color32 _negColor = Color.red;
-	static Color32 _posColor = Color.blue;
-
 	public BeliefControler beliefControler;
 	public Transform following;
 	public NavMeshAgent agent;
+	public FactionCom FactionCom;
 
 	public GameObject _line;
 
@@ -20,12 +18,7 @@ public class FollowerJob : IJobAction
 	{
 		get
 		{
-			if(beliefControler.TotalLeaning < 0)
-			{
-				return _negColor;
-			}
-
-			return _posColor;
+			return FactionCom.Faction.FactionColor;
 		}
 	}
 
@@ -54,8 +47,15 @@ public class FollowerJob : IJobAction
 	{
 		get
 		{
-			return 20f;
+			return 70f;
 		}
+	}
+
+	public bool JobReady()
+	{
+		var otherAI = following.gameObject.GetComponent<NormalPersonAI>();
+
+		return otherAI == null || otherAI.ReadyToBeFollwed;
 	}
 
 	public void Quit()
@@ -74,7 +74,9 @@ public class FollowerJob : IJobAction
 		lat.targetB = following.transform;
 
 		var lr = _line.GetComponent<LineRenderer>();
-		lr.material.color = HatColor;
+		lr.material.color = FactionCom.Faction.FactionColor;
+
+		beliefControler.EmulateBeliefStep(following.GetComponent<BeliefControler>(), 10);
 	}
 
 	public void Step()

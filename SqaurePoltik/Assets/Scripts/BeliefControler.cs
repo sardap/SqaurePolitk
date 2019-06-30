@@ -10,7 +10,6 @@ public class BeliefControler : MonoBehaviour
 	const float MAX_CONVINCING = 100;
 	const int FOLLWERS_NEEDED_FOR_RIOT = 5;
 
-
 	public enum EPassionLevel
 	{
 		Low,
@@ -83,11 +82,20 @@ public class BeliefControler : MonoBehaviour
 		return Util.RandomElement(_beliefsNames);
 	}
 
+	public static int BeliefsCount
+	{
+		get
+		{
+			return _beliefsNames.Count;
+		}
+	}
+
+
 	public MeshRenderer meshRenderer;
 	public float convincingVal;
 	public List<FollowerJob> follwers { get; set; }
 
-	Dictionary<string, IBelief> _beliefList = new Dictionary<string, IBelief>();
+	Dictionary<string, IBelief> _beliefs = new Dictionary<string, IBelief>();
 	MaterialPropertyBlock _propBlock;
 	Color32 _currentColor;
 	EPassionLevel _passionLevel;
@@ -101,7 +109,7 @@ public class BeliefControler : MonoBehaviour
 	{
 		get
 		{
-			return _beliefList[_speechBelief];
+			return _beliefs[_speechBelief];
 		}
 	}
 
@@ -109,7 +117,7 @@ public class BeliefControler : MonoBehaviour
 	{
 		get
 		{
-			return _beliefList.Values.Sum(i => i.Value);
+			return _beliefs.Values.Sum(i => i.Value);
 		}
 	}
 
@@ -140,7 +148,7 @@ public class BeliefControler : MonoBehaviour
 	{
 		var totalLeaningAbs = System.Math.Abs(totalLeaning);
 
-		var maxBelief = MAX_RIGHT * _beliefList.Count;
+		var maxBelief = MAX_RIGHT * _beliefs.Count;
 
 		EPassionLevel newState;
 
@@ -227,11 +235,11 @@ public class BeliefControler : MonoBehaviour
 
 		PeopleInfo.Instance.RegsiterPerson(this);
 
-		while (_beliefList.Count < convincingVal)
+		while (_beliefs.Count < convincingVal)
 		{
 			string nextName = GetBeleifName();
-			if (!_beliefList.ContainsKey(nextName))
-				_beliefList.Add(nextName, new GenBelief(nextName, _personalLeaning, _modifer));
+			if (!_beliefs.ContainsKey(nextName))
+				_beliefs.Add(nextName, new GenBelief(nextName, _personalLeaning, _modifer));
 		}
 
 		_registred = false;
@@ -267,7 +275,7 @@ public class BeliefControler : MonoBehaviour
 
 	public void StartSpeech()
 	{
-		_speechBelief = Util.RandomElement(_beliefList.Keys);
+		_speechBelief = Util.RandomElement(_beliefs.Keys);
 	}
 
 	public void StopSpeech()
@@ -277,7 +285,7 @@ public class BeliefControler : MonoBehaviour
 
 	public string CommonBelief(BeliefControler other)
 	{
-		var beliefIntersect = _beliefList.Keys.Intersect(other._beliefList.Keys);
+		var beliefIntersect = _beliefs.Keys.Intersect(other._beliefs.Keys);
 
 		if (beliefIntersect.Count() <= 0)
 		{
@@ -291,16 +299,16 @@ public class BeliefControler : MonoBehaviour
 
 	public void ReceiveSpeechBelief(BeliefControler other)
 	{
-		if (!_beliefList.ContainsKey(other._speechBelief))
+		if (!_beliefs.ContainsKey(other._speechBelief))
 		{
-			_beliefList.Add(other._speechBelief, new GenBelief(other._speechBelief, _personalLeaning, _modifer));
+			_beliefs.Add(other._speechBelief, new GenBelief(other._speechBelief, _personalLeaning, _modifer));
 		}
 
 		var otherValue = other.SpeechBelief.Value;
 		otherValue *= other.convincingVal / MAX_CONVINCING;
 		otherValue *= _stubones / MAX_CONVINCING;
 
-		_beliefList[other._speechBelief].Value += otherValue;
+		_beliefs[other._speechBelief].Value += otherValue;
 
 		ReactToBeliefChange();
 	}
@@ -309,13 +317,42 @@ public class BeliefControler : MonoBehaviour
 	{
 		var speakers = new List<BeliefControler>() { this, other }.OrderByDescending(i => Util.RandomFloat(0, i.convincingVal)).ToArray();
 
-		var otherValue = speakers[1]._beliefList[subject].Value;
+		var otherValue = speakers[1]._beliefs[subject].Value;
 		otherValue *= speakers[1].convincingVal / MAX_CONVINCING;
 		otherValue *= speakers[0]._stubones / MAX_CONVINCING;
 
-		speakers[0]._beliefList[subject].Value += otherValue;
+		speakers[0]._beliefs[subject].Value += otherValue;
 
 		speakers[0].ReactToBeliefChange();
+	}
+
+	public void EmulateBeliefStep(BeliefControler other, int n)
+	{
+		for(int i = 0; i < n; i++)
+		{
+			var key = Util.RandomElement(other._beliefs).Key;
+
+			if (!_beliefs.ContainsKey(key))
+			{
+				var newBelief = new GenBelief(key, 0, 0);
+				// DO NOT COMIBNE
+				newBelief.Value = other._beliefs[key].Value * Util.RandomFloat(0.3f, 0.5f);
+				_beliefs.Add(newBelief.Name, newBelief);
+			}
+
+			var diff = System.Math.Abs(other._beliefs[key].Value - _beliefs[key].Value);
+
+			float increment = 0f;
+
+			increment = diff * Util.RandomFloat(0.5f, 1f);
+
+			if (other._beliefs[key].Value < _beliefs[key].Value)
+			{
+				increment = -increment;
+			}
+
+			_beliefs[key].Value += increment;
+		}
 	}
 
 	void OnDestroy()

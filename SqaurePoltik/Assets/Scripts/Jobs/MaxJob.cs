@@ -156,4 +156,9 @@ public class MaxJob : IJobAction
 			_speechArea = null;
 		}
 	}
+
+	public bool JobReady()
+	{
+		return true;
+	}
 }

@@ -13,6 +13,11 @@ public static class Util
 		return (float)SharpRandom.NextDouble() * (max - min) + min;
 	}
 
+	public static byte RandomByte(byte min = byte.MinValue, byte max = byte.MaxValue)
+	{
+		return (byte)SharpRandom.Next(min, max);
+	}
+
 	public static bool RandomBool()
 	{
 		return SharpRandom.Next(0, 2) == 1;
