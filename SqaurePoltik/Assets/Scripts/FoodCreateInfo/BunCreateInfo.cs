@@ -17,7 +17,7 @@ class BunCreateInfo : IFoodCreateInfo
 	{
 		get
 		{
-			return 50f;
+			return 25f;
 		}
 	}
 }

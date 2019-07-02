@@ -14,6 +14,7 @@ public class CityGenrator : MonoBehaviour
 	public int numberOfBuildings;
 	public Transform buildingTransform;
 	public Transform peopleTransform;
+	public GlobalLeaningUpdate globalLeaningUpdate;
 
 	int _personCount = 0;
 	ConcurrentQueue<Vector3> _edges = new ConcurrentQueue<Vector3>();
@@ -129,7 +130,7 @@ public class CityGenrator : MonoBehaviour
 
 			CityInfo.BuildingType buildingType;
 
-			if (type <= 7)
+			if (type <= 6)
 			{
 				buildingType = CityInfo.BuildingType.NormalBuilding;
 			}
@@ -149,8 +150,9 @@ public class CityGenrator : MonoBehaviour
 			building.name += count++;
 			buildingsCreated.Enqueue(building);
 
-			yield return null;
 		}
+
+		yield return null;
 
 		_edgeMutex.WaitOne();
 		_createEdges = false;
@@ -195,6 +197,8 @@ public class CityGenrator : MonoBehaviour
 
 			yield return null;
 		}
+
+		globalLeaningUpdate.UpdateBar();
 	}
 
 	private void Awake()

@@ -63,6 +63,8 @@ class PeopleInfo
 				Leader = beliefControler.GetComponent<FactionCom>()
 			};
 
+			newFact.Leader.Faction = newFact;
+
 			_factionLst.Add(beliefControler, newFact);
 		}
 	}
@@ -97,16 +99,15 @@ class PeopleInfo
 			canadiets.Add(diff, go);
 		}
 
-		int n = (int)Mathf.Max(canadiets.Count * 0.3f, 1f);
+		int n = (int)System.Math.Max(canadiets.Count * 0.3f, 1);
 
 		while(canadiets.Count > n)
 		{
 			canadiets.RemoveAt(canadiets.IndexOfValue(canadiets.Last().Value));
 		}
 
-		tMin = Util.Shuffle(canadiets.ToList()).First().Value;
+		tMin = Helper.FindClosest(canadiets.Values.Where(i => i.Leader.beliefControler.LeftLeaning == beliefControler.LeftLeaning).Select(i => i.Leader), beliefControler.transform).Faction;
 
-		tMin.Leader.beliefControler.follwers.Add(newJob);
 		factionCom.Faction = tMin;
 		tMin.AddMember(factionCom);
 		return tMin.Leader.beliefControler.gameObject;

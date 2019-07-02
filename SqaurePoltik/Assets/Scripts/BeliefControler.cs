@@ -5,8 +5,8 @@ using UnityEngine;
 
 public class BeliefControler : MonoBehaviour
 {
-	const float MAX_LEFT = -10;
 	public const float MAX_RIGHT = 10;
+	const float MAX_LEFT = -MAX_RIGHT;
 	const float MAX_CONVINCING = 100;
 	const int FOLLWERS_NEEDED_FOR_RIOT = 5;
 
@@ -93,13 +93,12 @@ public class BeliefControler : MonoBehaviour
 
 	public MeshRenderer meshRenderer;
 	public float convincingVal;
-	public List<FollowerJob> follwers { get; set; }
 
 	Dictionary<string, IBelief> _beliefs = new Dictionary<string, IBelief>();
 	MaterialPropertyBlock _propBlock;
 	Color32 _currentColor;
 	EPassionLevel _passionLevel;
-	string _speechBelief;
+	string _speechBelief { get; set; }
 	float _personalLeaning;
 	float _modifer;
 	float _stubones;
@@ -134,6 +133,14 @@ public class BeliefControler : MonoBehaviour
 		get
 		{
 			return _passionLevel;
+		}
+	}
+
+	public bool LeftLeaning
+	{
+		get
+		{
+			return TotalLeaning < 0;
 		}
 	}
 
@@ -174,11 +181,6 @@ public class BeliefControler : MonoBehaviour
 			}
 		}
 
-		if(newState == EPassionLevel.Max && follwers.Count >= FOLLWERS_NEEDED_FOR_RIOT)
-		{
-
-		}
-
 		_passionLevel = newState;
 
 	}
@@ -186,7 +188,6 @@ public class BeliefControler : MonoBehaviour
 	// Start is called before the first frame update
 	void Start()
 	{
-		follwers = new List<FollowerJob>();
 		_propBlock = new MaterialPropertyBlock();
 
 		var extremeCata = Random.Range(0, 10);
@@ -198,11 +199,11 @@ public class BeliefControler : MonoBehaviour
 		}
 		else if (extremeCata < 7)
 		{
-			_modifer = 0.5f;
+			_modifer = 0.75f;
 		}
 		else if (extremeCata == 8)
 		{
-			_modifer = 0.75f;
+			_modifer = 0.9f;
 		}
 		else
 		{
@@ -210,7 +211,7 @@ public class BeliefControler : MonoBehaviour
 		}
 
 		convincingVal = Random.Range(0, MAX_CONVINCING * _modifer);
-		_stubones = Random.Range(MAX_CONVINCING / 2, MAX_CONVINCING * _modifer);
+		_stubones = Random.Range(0.5f * (1f - _modifer), 0.5f);
 
 		if (convincingVal < MAX_CONVINCING * 0.5)
 		{
@@ -251,7 +252,7 @@ public class BeliefControler : MonoBehaviour
 	{
 		var leaning = totalLeaning;
 
-		var maxLeaning = convincingVal * System.Math.Abs(MAX_LEFT);
+		var maxLeaning = _beliefs.Count * System.Math.Abs(MAX_LEFT);
 	
 		var leanVal = (System.Math.Abs(leaning) / maxLeaning) * 256;
 
@@ -292,12 +293,14 @@ public class BeliefControler : MonoBehaviour
 			return null;
 		}
 
-		var subject = Util.RandomElement(beliefIntersect);
+		beliefIntersect = beliefIntersect.OrderByDescending(i => System.Math.Max(_beliefs[i].Value, other._beliefs[i].Value)).ToList();
+
+		var subject = beliefIntersect.First();
 
 		return subject;
 	}
 
-	public void ReceiveSpeechBelief(BeliefControler other)
+	public void ReceiveSpeechBelief(BeliefControler other, Faction otherFaction)
 	{
 		if (!_beliefs.ContainsKey(other._speechBelief))
 		{
@@ -306,7 +309,8 @@ public class BeliefControler : MonoBehaviour
 
 		var otherValue = other.SpeechBelief.Value;
 		otherValue *= other.convincingVal / MAX_CONVINCING;
-		otherValue *= _stubones / MAX_CONVINCING;
+		otherValue *= otherFaction.MemberMultipler;
+		otherValue *= _stubones;
 
 		_beliefs[other._speechBelief].Value += otherValue;
 
@@ -319,7 +323,6 @@ public class BeliefControler : MonoBehaviour
 
 		var otherValue = speakers[1]._beliefs[subject].Value;
 		otherValue *= speakers[1].convincingVal / MAX_CONVINCING;
-		otherValue *= speakers[0]._stubones / MAX_CONVINCING;
 
 		speakers[0]._beliefs[subject].Value += otherValue;
 
@@ -357,15 +360,6 @@ public class BeliefControler : MonoBehaviour
 
 	void OnDestroy()
 	{
-		var toDestory = follwers.ToList();
-
-		foreach(var follower in toDestory)
-		{
-			follower.Worker.QuitJob();
-		}
-
-		follwers.Clear();
-
 		PeopleInfo.Instance.UnregsterMax(this);
 		PeopleInfo.Instance.UnregsterPerson(this);
 	}

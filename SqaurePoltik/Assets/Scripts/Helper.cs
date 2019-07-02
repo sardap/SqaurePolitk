@@ -21,13 +21,17 @@ public static class Helper
 		Factory.Instance.GetBusyTalkingText(text, color, postion);
 	}
 
+	public static void CreateTalkingText(Camera camera, Color32 color, Vector3 postion, string text)
+	{
+		if (OnCamrea(camera, postion))
+		{
+			CreateTalkingText(color, postion, text);
+		}
+	}
+
 	public static void CreateTalkingText(Camera camera, Color32 color, Transform transform, string text)
 	{
-		if (OnCamrea(camera, transform))
-		{
-			CreateTalkingText(color, transform, text);
-		}
-
+		CreateTalkingText(camera, color, transform.position, text);
 	}
 
 	public static void CreateTalkingText(Camera camera, Color32 color, Transform transform)
@@ -35,9 +39,9 @@ public static class Helper
 		CreateTalkingText(camera, color, transform, LatainSenteceCreator.Instance.GetSentence());
 	}
 
-	public static bool OnCamrea(Camera camera, Transform transform)
+	public static bool OnCamrea(Camera camera, Vector3 givenPostion)
 	{
-		var postion = camera.WorldToViewportPoint(transform.position);
+		var postion = camera.WorldToViewportPoint(givenPostion);
 		return postion.x > 0 && postion.x < 1 && postion.y > 0 && postion.y < 1;
 	}
 
@@ -58,7 +62,6 @@ public static class Helper
 
 		return min;
 	}
-
 
 	public static T FindClosest<T>(IEnumerable<T> toSerach, Transform finder) where T : Component
 	{

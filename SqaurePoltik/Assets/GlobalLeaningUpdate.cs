@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class GlobalLeaningUpdate : MonoBehaviour
 {
-	public const float UPDATE_INTERVAL = 5;
+	public const float UPDATE_INTERVAL = 1;
 
 	public Slider slider;
 	public TextMeshProUGUI leftText;
@@ -14,11 +14,9 @@ public class GlobalLeaningUpdate : MonoBehaviour
 
 	float _nextUpdate;
 
-	void UpdateBar()
+	public void UpdateBar()
 	{
 		var peopleInfo = PeopleInfo.Instance;
-
-		//Debug.AssertFormat(peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning > -1 &&  peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning < 1, "FRAME {0} LEANING PERCENT ABOVE 1 {1}", Time.frameCount, peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning);
 
 		var leaning = (peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning);
 		slider.value = -leaning;

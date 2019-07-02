@@ -60,7 +60,7 @@ public class FollowerJob : IJobAction
 
 	public void Quit()
 	{
-		following.gameObject.GetComponent<BeliefControler>().follwers.Remove(this);
+		FactionCom.Faction.RemoveMember(FactionCom);
 	}
 
 	public void Start()

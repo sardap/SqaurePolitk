@@ -28,6 +28,7 @@ public class MaxJob : IJobAction
 	public BeliefControler beliefControler;
 	public NavMeshAgent agent;
 	public Camera Camera { get; set; }
+	public FactionCom FactionCom { get; set; }
 
 	public Color32 HatColor
 	{
@@ -58,15 +59,9 @@ public class MaxJob : IJobAction
 		}
 	}
 
-	public void AddFollower(FollowerJob follower)
-	{
-		beliefControler.follwers.Add(follower);
-	}
-
 	public void Quit()
 	{
-		beliefControler.follwers.ToList().ForEach(i => i.Worker.QuitJob());
-		beliefControler.follwers.Clear();
+
 	}
 
 	public void Start()
@@ -109,6 +104,7 @@ public class MaxJob : IJobAction
 				if (_talkingCD <= 0)
 				{
 					Helper.CreateTalkingText(Camera, beliefControler.BeliefColor, agent.transform);
+					beliefControler.StartSpeech();
 					_talkingCD = 0.5f;
 				}
 
@@ -126,11 +122,15 @@ public class MaxJob : IJobAction
 
 	void FindListener()
 	{
-		foreach (var person in _speechArea.GetPeople())
+		var people = _speechArea.GetPeople();
+
+		Debug.Assert(people != null);
+
+		foreach (var person in people)
 		{
 			if (person.CanRevSpeech())
 			{
-				var listen = Util.RandomFloat(0, beliefControler.convincingVal);
+				var listen = Util.RandomFloat(0, beliefControler.convincingVal) * FactionCom.Faction.MemberMultipler;
 
 				if (listen >= person.beliefControler.convincingVal)
 				{

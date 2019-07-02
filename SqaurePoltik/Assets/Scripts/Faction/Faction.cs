@@ -6,6 +6,8 @@ using UnityEngine;
 
 public class Faction
 {
+	const int MEMBER_COUNT_MULITPLIER = 5;
+
 	List<FactionCom> _memebers = new List<FactionCom>();
 	Color32 _factionColor;
 
@@ -18,6 +20,14 @@ public class Faction
 		get
 		{
 			return Leader.beliefControler.TotalLeaning;
+		}
+	}
+
+	public int MemberMultipler
+	{
+		get
+		{
+			return System.Math.Max(_memebers.Count / MEMBER_COUNT_MULITPLIER, 1);
 		}
 	}
 

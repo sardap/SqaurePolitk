@@ -6,6 +6,8 @@ using UnityEngine;
 
 public class MarketInfo : MonoBehaviour
 {
+	const float STARTING_FOOD = 500f;
+
 	List<Transform> _marketBoxes;
 	Stack<float> _foodStack;
 
@@ -25,6 +27,9 @@ public class MarketInfo : MonoBehaviour
 	{
 		_marketBoxes = new List<Transform>();
 		_foodStack = new Stack<float>();
+
+		while (FoodCount < STARTING_FOOD)
+			_foodStack.Push(25f);
 
 		UpdateFoodCount();
 	}

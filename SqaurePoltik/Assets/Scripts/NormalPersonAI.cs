@@ -9,7 +9,7 @@ public class NormalPersonAI : MonoBehaviour
 {
 	const float WORKING_COOLDOWN = 60f;
 	const float SPEEACH_COOLDOWN = 20f;
-	const float TALKING_COOLDOWN = 60f;
+	const float TALKING_COOLDOWN = 5f;
 	const float FOOD_STARVING_THRESHHOLD = 0.4f;
 	const float SLEEP_STARVING_THRESHHOLD = 0.1f;
 
@@ -63,6 +63,7 @@ public class NormalPersonAI : MonoBehaviour
 	float _talkingCD;
 	float _talkingToOtherCD;
 	float _workingCD;
+	float _wanderingLeftCD;
 	NormalPersonAI _talkingSubject;
 	MaxJob _speaker;
 	GameObject _line;
@@ -276,13 +277,14 @@ public class NormalPersonAI : MonoBehaviour
 
 					_talkingSubject = null;
 					ChangeState(State.Wandering);
+					_changeCD = _wanderingLeftCD;
 				}
 				break;
 
 			case State.RevSpeach:
 				if (_changeCD <= 0)
 				{
-					beliefControler.ReceiveSpeechBelief(_speaker.beliefControler);
+					beliefControler.ReceiveSpeechBelief(_speaker.beliefControler, _speaker.FactionCom.Faction);
 					_changeCD = Random.Range(0f, 2f);
 				}
 
@@ -364,7 +366,7 @@ public class NormalPersonAI : MonoBehaviour
 
 				if(_talkingCD <= 0)
 				{
-					Helper.CreateTalkingText(new Color32 { a = 50 }, Home.SleepTalkingPostion(), "zzzzz".Substring(Random.Range(1, 5)));
+					Helper.CreateTalkingText(camera, new Color32 { a = 50 }, Home.SleepTalkingPostion(), "zzzzz".Substring(Random.Range(1, 5)));
 					_talkingCD = 5f;
 				}
 
@@ -384,7 +386,6 @@ public class NormalPersonAI : MonoBehaviour
 	void Die()
 	{
 		Debug.LogFormat("Frame:{1} {0} DIED LAST 5 STATES: {2}", gameObject.name, Time.frameCount, LastFiveStates(_prevousStates));
-		PeopleInfo.Instance.UnregsterMax(beliefControler);
 
 		if(_worker.CurrentState == Worker.State.HasJob)
 		{
@@ -446,7 +447,8 @@ public class NormalPersonAI : MonoBehaviour
 			{
 				agent = agent,
 				beliefControler = beliefControler,
-				Camera = camera
+				Camera = camera,
+				FactionCom = _factionCom
 			};
 
 			_worker.GiveJob(newJob);
@@ -516,7 +518,7 @@ public class NormalPersonAI : MonoBehaviour
 
 	bool CanTalk()
 	{
-		return _state == State.Wandering && _talkingToOtherCD <= 0 && !DesperateForFood();
+		return (_state == State.Wandering || _state == State.Idling) && _talkingToOtherCD <= 0 && !DesperateForFood();
 	}
 
 	public bool CanRevSpeech()
@@ -561,6 +563,9 @@ public class NormalPersonAI : MonoBehaviour
 				return;
 			}
 
+			_wanderingLeftCD = _changeCD;
+			otherPerson._wanderingLeftCD = otherPerson._changeCD;
+
 			ChangeState(State.Talking);
 			otherPerson.ChangeState(State.Talking);
 
@@ -573,7 +578,8 @@ public class NormalPersonAI : MonoBehaviour
 			_talkingSubject = otherPerson;
 			otherPerson._talkingSubject = this;
 
-			beliefControler.TalkTo(otherPerson.beliefControler, subject);
+			for(int i = 0; i < 5; i++)
+				beliefControler.TalkTo(otherPerson.beliefControler, subject);
 
 			_talkingCD = 0f;
 			otherPerson._talkingCD = 1f;
