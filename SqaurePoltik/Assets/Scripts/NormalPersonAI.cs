@@ -133,6 +133,15 @@ public class NormalPersonAI : MonoBehaviour
 		if (agent.enabled)
 		{
 			agent.isStopped = !(MovableStates.Any(i => _state == i) || _state == State.Working && _worker.Job.Walk);
+
+			if(_state == State.Wandering)
+			{
+				agent.speed = 1f;
+			}
+			else
+			{
+				agent.speed = 5f;
+			}
 		}
 
 		if (_state == State.Idling || _state == State.Wandering)

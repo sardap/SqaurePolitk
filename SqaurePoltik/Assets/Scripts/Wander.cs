@@ -24,7 +24,7 @@ public class Wander : MonoBehaviour
 
 		agent.SetDestination(_target);
 
-		_timeLeft = walkTime;
+		_timeLeft = walkTime + Random.Range(0, 2f);
 	}
 
 	// Update is called once per frame
@@ -32,7 +32,7 @@ public class Wander : MonoBehaviour
     {
 		_timeLeft -= Time.deltaTime;
 
-		if (_timeLeft < 0)
+		if (_timeLeft < 0 || !agent.pathPending && agent.remainingDistance <= 0.2f)
 		{
 			NewTarget();
 		}

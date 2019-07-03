@@ -130,7 +130,7 @@ class PeopleInfo
 			canadiets.RemoveAt(canadiets.IndexOfValue(canadiets.Last().Value));
 		}
 
-		tMin = canadiets.Values.ElementAt(Util.SharpRandom.Next(0, canadiets.Count));
+		tMin = Helper.FindClosest(canadiets.Values.Select(i => i.Leader), beliefControler.transform).Faction;
 
 		factionCom.Faction = tMin;
 		tMin.AddMember(factionCom);
