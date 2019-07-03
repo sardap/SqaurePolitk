@@ -12,6 +12,8 @@ public class NormalPersonAI : MonoBehaviour
 	const float TALKING_COOLDOWN = 5f;
 	const float FOOD_STARVING_THRESHHOLD = 0.4f;
 	const float SLEEP_STARVING_THRESHHOLD = 0.1f;
+	const float SPEECH_SOCIAL_BENFIT = SocialNeed.MAX_VALUE * 0.25f;
+	const float SPEAKING_SOCIAL_BENFIT = SocialNeed.MAX_VALUE * 0.5f;
 
 	public enum State
 	{
@@ -26,7 +28,8 @@ public class NormalPersonAI : MonoBehaviour
 		ConsumingFood,
 		GoingToBed,
 		Sleeping,
-		Dying
+		Dying,
+		SeekingSocial
 	}
 
 	public class StateMachineVoilation : System.Exception
@@ -56,7 +59,7 @@ public class NormalPersonAI : MonoBehaviour
 
 	static List<NormalPersonAI> personList = new List<NormalPersonAI>();
 
-	static readonly State[] MovableStates = new State[] {State.Wandering, State.RevSpeach, State.FindingFood, State.GoingToBed};
+	static readonly State[] MovableStates = new State[] {State.Wandering, State.RevSpeach, State.FindingFood, State.GoingToBed, State.SeekingSocial};
 
 	State _state;
 	float _changeCD;
@@ -71,6 +74,7 @@ public class NormalPersonAI : MonoBehaviour
 	Worker _worker;
 	Needs _needs;
 	FactionCom _factionCom;
+	Transform _socialSeekingTarget;
 
 	MarketInfo _targetMarket { get; set; }
 
@@ -140,16 +144,35 @@ public class NormalPersonAI : MonoBehaviour
 		return test.x > 0 && test.x < 1 && test.y > 0 && test.y < 1;
 	}
 
-	bool DesperateForSleep()
+	bool DesperateForSocial(SocialNeed socialNeed)
 	{
-		var mostDesprateNeed = _needs.MostDesprateNeed();
-		return mostDesprateNeed.GetType() == typeof(SleepingNeed) && mostDesprateNeed.Value <= mostDesprateNeed.MaxValue * SLEEP_STARVING_THRESHHOLD;
+		return socialNeed.Value <= 0;
 	}
 
-	bool DesperateForFood()
+	bool DesperateForSleep(SleepingNeed sleepingNeed)
 	{
-		var mostDesprateNeed = _needs.MostDesprateNeed();
-		return mostDesprateNeed.GetType() == typeof(FoodNeed) && mostDesprateNeed.Value <= mostDesprateNeed.MaxValue * FOOD_STARVING_THRESHHOLD;
+		return sleepingNeed.Value <= sleepingNeed.MaxValue * SLEEP_STARVING_THRESHHOLD;
+	}
+
+	bool DesperateForFood(FoodNeed foodNeed)
+	{
+		return foodNeed.Value <= foodNeed.MaxValue * FOOD_STARVING_THRESHHOLD;
+	}
+
+	bool WantsFood(FoodNeed foodNeed)
+	{
+		var num = 100;
+
+		if (foodNeed.Value <= foodNeed.MaxValue * 0.5)
+		{
+			num = 50;
+		}
+		else if (foodNeed.Value <= foodNeed.MaxValue * 0.7)
+		{
+			num = 80;
+		}
+
+		return Random.Range(0, 100) >= num;
 	}
 
 	// Update is called once per frame
@@ -171,33 +194,24 @@ public class NormalPersonAI : MonoBehaviour
 			case State.Wandering:
 				_talkingCD -= Time.deltaTime;
 
-				var mostDesprateNeed = _needs.MostDesprateNeed();
 				bool eatChance = false;
 				bool sleepAddres = false;
+				bool socialAddress = false;
 
-				if (mostDesprateNeed.GetType() == typeof(FoodNeed))
+				if (DesperateForFood(_needs.FoodNeed))
 				{
-
-					if (DesperateForFood())
-					{
-						eatChance = true;
-					}
-					else if (mostDesprateNeed.Value <= mostDesprateNeed.MaxValue * 0.5)
-					{
-						eatChance = Random.Range(0, 100) >= 50;
-					}
-					else if (mostDesprateNeed.Value <= mostDesprateNeed.MaxValue * 0.7)
-					{
-						eatChance = Random.Range(0, 100) >= 80;
-					}
-
+					eatChance = true;
 				}
-				else if(mostDesprateNeed.GetType() == typeof(SleepingNeed))
+				else if(DesperateForSleep(_needs.SleepingNeed))
 				{
-					sleepAddres = DesperateForSleep();
+					sleepAddres = true;
+				}
+				else if(DesperateForSocial(_needs.SocialNeed))
+				{
+					socialAddress = true;
 				}
 
-				if (_changeCD <= 0 || eatChance || sleepAddres)
+				if (_changeCD <= 0 || eatChance || sleepAddres || socialAddress)
 				{
 					if (_needs.Die)
 					{
@@ -207,7 +221,7 @@ public class NormalPersonAI : MonoBehaviour
 
 					State newState = State.Idling;
 
-					if (eatChance)
+					if (eatChance || WantsFood(_needs.FoodNeed))
 					{
 						if (StartFindFood())
 						{
@@ -219,8 +233,15 @@ public class NormalPersonAI : MonoBehaviour
 						GoToBed();
 						newState = State.GoingToBed;
 					}
+					else if (socialAddress)
+					{
+						FindSocialInteraction();
+						newState = State.SeekingSocial;
+					}
 					else if(_workingCD <= 0)
 					{
+						CheckKeepJob();
+
 						if (_worker.CurrentState == Worker.State.Jobless)
 						{
 							FindJob();
@@ -244,6 +265,21 @@ public class NormalPersonAI : MonoBehaviour
 				}
 				break;
 
+			case State.SeekingSocial:
+
+				if (ReachedTarget(0.2f))
+				{
+					FindSocialInteraction();
+				}
+				
+				if(_needs.SocialNeed.Value >= SocialNeed.MAX_VALUE * 0.8f)
+				{
+					StopSocialSeeking();
+					ChangeState(State.Wandering);
+				}
+
+				break;
+
 			case State.Talking:
 				_talkingCD -= Time.deltaTime;
 
@@ -256,6 +292,7 @@ public class NormalPersonAI : MonoBehaviour
 
 				if (_changeCD <= 0)
 				{
+					_needs.SocialNeed.Value += SPEECH_SOCIAL_BENFIT;
 					ChangeState(State.FinshedTalking);
 				}
 
@@ -383,6 +420,49 @@ public class NormalPersonAI : MonoBehaviour
 		}
     }
 
+	void CheckKeepJob()
+	{
+		if (
+			_worker.Job != null && 
+			(
+				(beliefControler.PassionLevel == BeliefControler.EPassionLevel.High && typeof(FollowerJob) != _worker.Job.GetType()) ||
+				(beliefControler.PassionLevel == BeliefControler.EPassionLevel.Max && typeof(MaxJob) != _worker.Job.GetType())
+			)
+		)
+		{
+			_worker.QuitJob();
+		}
+	}
+
+	void FindSocialInteraction()
+	{
+		hat.enabled = true;
+		hat.material.color = new Color32() { r = 255, g = 69, b = 69, a = byte.MaxValue };
+
+		var result = PeopleInfo.Instance.FindClosestSocialInteraction(beliefControler);
+
+		Vector3 target;
+
+		if (result != null)
+		{
+			target = result.transform.position;
+		}
+		else
+		{
+			target = new Vector3
+			(
+				Random.Range(transform.position.x - 5, transform.position.x + 5),
+				1,
+				Random.Range(transform.position.z - 5, transform.position.z + 5)
+			);
+			target.y = 1;
+
+			target = beliefControler.transform.position;
+		}
+
+		agent.SetDestination(target);
+	}
+
 	void Die()
 	{
 		Debug.LogFormat("Frame:{1} {0} DIED LAST 5 STATES: {2}", gameObject.name, Time.frameCount, LastFiveStates(_prevousStates));
@@ -462,12 +542,14 @@ public class NormalPersonAI : MonoBehaviour
 				FactionCom = _factionCom
 			};
 
-			newJob.following = PeopleInfo.Instance.FindClosetToFollow(newJob, beliefControler, _factionCom).transform;
+			var cloest = PeopleInfo.Instance.FindClosetToFollow(newJob, beliefControler, _factionCom);
 
-			if(newJob.following == null)
+			if (cloest == null)
 			{
 				return;
 			}
+
+			newJob.following = cloest.transform;
 
 			_worker.GiveJob(newJob);
 		}
@@ -487,9 +569,20 @@ public class NormalPersonAI : MonoBehaviour
 		return !agent.pathPending && agent.remainingDistance <= leanacy;
 	}
 
+	void StopSocialSeeking()
+	{
+		hat.enabled = false;
+		PeopleInfo.Instance.RemoveSocialSeeker(beliefControler);
+	}
+
 	public void RevSpeech(MaxJob speaker, Vector3 standingPostion)
 	{
 		_speaker = speaker;
+
+		if(_state == State.SeekingSocial)
+		{
+			StopSocialSeeking();
+		}
 
 		ChangeState(State.RevSpeach);
 
@@ -512,20 +605,25 @@ public class NormalPersonAI : MonoBehaviour
 	public void StopRevSpeech()
 	{
 		_speaker = null;
+		_needs.SocialNeed.Value += SPEECH_SOCIAL_BENFIT;
 		Factory.Instance.ReleaseaTalkingLine(ref _line);
 		ChangeState(State.Wandering);
 	}
 
+	bool WillingForSocialInteraction()
+	{
+		return _needs.SocialNeed.Value < _needs.SocialNeed.MaxValue * 0.8f;
+	}
+
 	bool CanTalk()
 	{
-		return (_state == State.Wandering || _state == State.Idling) && _talkingToOtherCD <= 0 && !DesperateForFood();
+		return _state == State.SeekingSocial || ((_state == State.Wandering || _state == State.Idling) && _talkingToOtherCD <= 0 && !DesperateForFood(_needs.FoodNeed) && WillingForSocialInteraction());
 	}
 
 	public bool CanRevSpeech()
 	{
-		return (_state == State.Idling || _state == State.Wandering) && !DesperateForFood();
+		return _state == State.SeekingSocial || ((_state == State.Idling || _state == State.Wandering) && !DesperateForFood(_needs.FoodNeed) && WillingForSocialInteraction());
 	}
-
 
 	void StopWork()
 	{
@@ -562,6 +660,17 @@ public class NormalPersonAI : MonoBehaviour
 			{
 				return;
 			}
+
+			if(_state == State.SeekingSocial)
+			{
+				StopSocialSeeking();
+			}
+
+			if (otherPerson._state == State.SeekingSocial)
+			{
+				otherPerson.StopSocialSeeking();
+			}
+
 
 			_wanderingLeftCD = _changeCD;
 			otherPerson._wanderingLeftCD = otherPerson._changeCD;

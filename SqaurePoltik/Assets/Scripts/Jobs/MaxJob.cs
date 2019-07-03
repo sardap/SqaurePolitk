@@ -61,7 +61,7 @@ public class MaxJob : IJobAction
 
 	public void Quit()
 	{
-
+		FactionCom.Faction.Destroy();
 	}
 
 	public void Start()

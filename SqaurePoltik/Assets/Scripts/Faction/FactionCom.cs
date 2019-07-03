@@ -22,7 +22,8 @@ public class FactionCom : MonoBehaviour
 
 	void OnDestroy()
 	{
-		Faction.RemoveMember(this);
+		if(Faction != null)
+			Faction.RemoveMember(this);
 	}
 
 }

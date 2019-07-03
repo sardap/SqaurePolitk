@@ -26,8 +26,8 @@ class PeopleInfo
 	}
 
 	List<BeliefControler> _allBeliefControlers = new List<BeliefControler>();
-
 	Dictionary<BeliefControler, Faction> _factionLst = new Dictionary<BeliefControler, Faction>();
+	HashSet<BeliefControler> _lookingForSocialInteraction = new HashSet<BeliefControler>();
 
 	public float MaxTotalLeaning
 	{
@@ -81,6 +81,28 @@ class PeopleInfo
 		_allBeliefControlers.Remove(beliefControler);
 	}
 
+	public BeliefControler FindClosestSocialInteraction(BeliefControler beliefControler, float maxDist = 20f)
+	{
+		var target = Helper.FindClosest(_lookingForSocialInteraction, beliefControler.transform);
+
+		if(target == null || Vector3.Distance(target.transform.position, beliefControler.transform.position) > maxDist)
+		{
+			_lookingForSocialInteraction.Add(beliefControler);
+			target = null;
+		}
+		else
+		{
+			_lookingForSocialInteraction.Remove(target);
+		}
+
+		return target;
+	}
+
+	public void RemoveSocialSeeker(BeliefControler beliefControler)
+	{
+		_lookingForSocialInteraction.Remove(beliefControler);
+	}
+
 	public GameObject FindClosetToFollow(FollowerJob newJob, BeliefControler beliefControler, FactionCom factionCom)
 	{
 		if(_factionLst.Values.Count == 0)
@@ -105,6 +127,8 @@ class PeopleInfo
 		{
 			canadiets.RemoveAt(canadiets.IndexOfValue(canadiets.Last().Value));
 		}
+
+		Debug.Assert(canadiets.Count > 0);
 
 		tMin = Helper.FindClosest(canadiets.Values.Where(i => i.Leader.beliefControler.LeftLeaning == beliefControler.LeftLeaning).Select(i => i.Leader), beliefControler.transform).Faction;
 

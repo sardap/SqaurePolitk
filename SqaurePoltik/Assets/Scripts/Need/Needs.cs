@@ -13,15 +13,16 @@ public class Needs : MonoBehaviour
 	float _nextUpdate;
 
 	public FoodNeed FoodNeed { get; set; }
-
 	public SleepingNeed SleepingNeed { get; set; }
+	public SocialNeed SocialNeed { get; set; }
 
     // Start is called before the first frame update
     void Start()
     {
 		FoodNeed = new FoodNeed();
 		SleepingNeed = new SleepingNeed();
-		var newLst = new HashSet<INeed>() { FoodNeed, SleepingNeed };
+		SocialNeed = new SocialNeed();
+		var newLst = new HashSet<INeed>() { FoodNeed, SleepingNeed, SocialNeed };
 
 		_needLst = newLst.ToList();
 

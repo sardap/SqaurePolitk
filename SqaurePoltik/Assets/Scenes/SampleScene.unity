@@ -997,9 +997,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 46071623}
-  numberOfBuildings: 150
+  numberOfBuildings: 100
   buildingTransform: {fileID: 1762841479}
   peopleTransform: {fileID: 1353670354}
+  globalLeaningUpdate: {fileID: 41171069}
 --- !u!4 &1136020276
 Transform:
   m_ObjectHideFlags: 0

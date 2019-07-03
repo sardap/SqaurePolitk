@@ -360,7 +360,9 @@ public class BeliefControler : MonoBehaviour
 
 	void OnDestroy()
 	{
-		PeopleInfo.Instance.UnregsterMax(this);
+		if(_passionLevel == EPassionLevel.Max)
+			PeopleInfo.Instance.UnregsterMax(this);
+
 		PeopleInfo.Instance.UnregsterPerson(this);
 	}
 }
