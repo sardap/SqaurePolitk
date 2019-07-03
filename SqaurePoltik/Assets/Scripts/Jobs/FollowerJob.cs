@@ -7,6 +7,8 @@ using UnityEngine.AI;
 
 public class FollowerJob : IJobAction
 {
+	bool _active;
+
 	public BeliefControler beliefControler;
 	public Transform following;
 	public NavMeshAgent agent;

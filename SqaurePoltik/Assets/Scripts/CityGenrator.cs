@@ -15,6 +15,7 @@ public class CityGenrator : MonoBehaviour
 	public Transform buildingTransform;
 	public Transform peopleTransform;
 	public GlobalLeaningUpdate globalLeaningUpdate;
+	public GameObject player;
 
 	int _personCount = 0;
 	ConcurrentQueue<Vector3> _edges = new ConcurrentQueue<Vector3>();
@@ -212,9 +213,12 @@ public class CityGenrator : MonoBehaviour
 		Thread thread = new Thread(new ThreadStart(CreateEdges));
 		thread.Start();
 
+		/*
 		var player = Resources.Load("People/Player") as GameObject;
 		player = Instantiate(player, new Vector3(0, 0.1f, 0), Quaternion.identity);
 		player.GetComponent<PlayerController>().cam = mainCamera;
+		*/
+		player.transform.position = new Vector3(0, 0.1f, 0);
 
 		mainCamera.GetComponent<FollowTrans>().target = player.transform;
 
