@@ -122,6 +122,8 @@ public class MaxJob : IJobAction
 
 	void FindListener()
 	{
+		Debug.Assert(_speechArea != null);
+
 		var people = _speechArea.GetPeople();
 
 		Debug.Assert(people != null);
