@@ -14,6 +14,7 @@ public class NormalPersonAI : MonoBehaviour
 	const float SLEEP_STARVING_THRESHHOLD = 0.1f;
 	const float SPEECH_SOCIAL_BENFIT = SocialNeed.MAX_VALUE * 0.25f;
 	const float SPEAKING_SOCIAL_BENFIT = SocialNeed.MAX_VALUE * 0.5f;
+	const float SOCIAL_NEEDING_COOLDOWN = 20f;
 
 	public enum State
 	{
@@ -236,6 +237,7 @@ public class NormalPersonAI : MonoBehaviour
 					else if (socialAddress)
 					{
 						FindSocialInteraction();
+						_changeCD = SOCIAL_NEEDING_COOLDOWN;
 						newState = State.SeekingSocial;
 					}
 					else if(_workingCD <= 0)
@@ -271,8 +273,15 @@ public class NormalPersonAI : MonoBehaviour
 				{
 					FindSocialInteraction();
 				}
-				
-				if(_needs.SocialNeed.Value >= SocialNeed.MAX_VALUE * 0.8f)
+
+				if (_changeCD < 0 && _worker.CurrentState == Worker.State.Jobless)
+				{
+					GiveFollowerJob();
+					_changeCD = float.MaxValue;
+					StartWork();
+					ChangeState(State.Working);
+				}
+				else if (_needs.SocialNeed.Value >= SocialNeed.MAX_VALUE * 0.8f)
 				{
 					StopSocialSeeking();
 					ChangeState(State.Wandering);
@@ -518,6 +527,28 @@ public class NormalPersonAI : MonoBehaviour
 		return true;
 	}
 
+	void GiveFollowerJob()
+	{
+		var newJob = new FollowerJob()
+		{
+			beliefControler = beliefControler,
+			agent = agent,
+			FactionCom = _factionCom
+		};
+
+		var cloest = PeopleInfo.Instance.FindClosetToFollow(newJob, beliefControler, _factionCom);
+
+		if (cloest == null)
+		{
+			return;
+		}
+
+		newJob.following = cloest.transform;
+
+		_worker.GiveJob(newJob);
+
+	}
+
 	void FindJob()
 	{
 		if (beliefControler.PassionLevel == BeliefControler.EPassionLevel.Max)
@@ -535,23 +566,7 @@ public class NormalPersonAI : MonoBehaviour
 		}
 		else if(beliefControler.PassionLevel == BeliefControler.EPassionLevel.High)
 		{
-			var newJob = new FollowerJob()
-			{
-				beliefControler = beliefControler,
-				agent = agent,
-				FactionCom = _factionCom
-			};
-
-			var cloest = PeopleInfo.Instance.FindClosetToFollow(newJob, beliefControler, _factionCom);
-
-			if (cloest == null)
-			{
-				return;
-			}
-
-			newJob.following = cloest.transform;
-
-			_worker.GiveJob(newJob);
+			GiveFollowerJob();
 		}
 		else
 		{

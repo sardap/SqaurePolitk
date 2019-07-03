@@ -105,7 +105,9 @@ class PeopleInfo
 
 	public GameObject FindClosetToFollow(FollowerJob newJob, BeliefControler beliefControler, FactionCom factionCom)
 	{
-		if(_factionLst.Values.Count == 0)
+		var applcableFactions = _factionLst.Values.Where(i => i.Leader.beliefControler.LeftLeaning == beliefControler.LeftLeaning);
+
+		if(applcableFactions.Count() == 0)
 		{
 			return null;
 		}
@@ -114,7 +116,7 @@ class PeopleInfo
 
 		Faction tMin = null;
 
-		foreach (var go in _factionLst.Values)
+		foreach (var go in applcableFactions)
 		{
 			float diff = Mathf.Abs(go.Leaning - beliefControler.TotalLeaning);
 
@@ -128,9 +130,7 @@ class PeopleInfo
 			canadiets.RemoveAt(canadiets.IndexOfValue(canadiets.Last().Value));
 		}
 
-		Debug.Assert(canadiets.Count > 0);
-
-		tMin = Helper.FindClosest(canadiets.Values.Where(i => i.Leader.beliefControler.LeftLeaning == beliefControler.LeftLeaning).Select(i => i.Leader), beliefControler.transform).Faction;
+		tMin = canadiets.Values.ElementAt(Util.SharpRandom.Next(0, canadiets.Count));
 
 		factionCom.Faction = tMin;
 		tMin.AddMember(factionCom);
