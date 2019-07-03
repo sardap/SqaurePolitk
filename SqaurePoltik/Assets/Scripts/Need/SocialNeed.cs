@@ -51,6 +51,14 @@ public class SocialNeed : INeed
 		}
 	}
 
+	public float MoodModifer
+	{
+		get
+		{
+			return 1f;
+		}
+	}
+
 	public SocialNeed()
 	{
 		Value = Util.RandomFloat(0, MAX_VALUE);

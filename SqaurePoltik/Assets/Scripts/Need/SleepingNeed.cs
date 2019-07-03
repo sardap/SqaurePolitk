@@ -37,6 +37,14 @@ public class SleepingNeed : INeed
 		}
 	}
 
+	public float MoodModifer
+	{
+		get
+		{
+			return 0.5f;
+		}
+	}
+
 	public SleepingNeed()
 	{
 		Value = Util.RandomFloat(0, MAX_VALUE);

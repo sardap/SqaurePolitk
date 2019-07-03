@@ -96,6 +96,6 @@ public class FollowerJob : IJobAction
 
 	public void Stop()
 	{
-		Factory.Instance.ReleaseaTalkingLine(ref _line);
+		Factory.Instance.ReleaseTalkingLine(ref _line);
 	}
 }

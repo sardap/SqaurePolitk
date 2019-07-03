@@ -30,7 +30,8 @@ public class NormalPersonAI : MonoBehaviour
 		GoingToBed,
 		Sleeping,
 		Dying,
-		SeekingSocial
+		SeekingSocial,
+		Fighting
 	}
 
 	public class StateMachineVoilation : System.Exception
@@ -76,6 +77,7 @@ public class NormalPersonAI : MonoBehaviour
 	Needs _needs;
 	FactionCom _factionCom;
 	Transform _socialSeekingTarget;
+	bool _inCharge;
 
 	MarketInfo _targetMarket { get; set; }
 
@@ -313,7 +315,7 @@ public class NormalPersonAI : MonoBehaviour
 					if(_line != null)
 					{
 						Debug.LogFormat("Frame:{2} {1} RETURNING {0} ", _line.name, gameObject.name, Time.frameCount);
-						Factory.Instance.ReleaseaTalkingLine(ref _line);
+						Factory.Instance.ReleaseTalkingLine(ref _line);
 					}
 
 					_talkingToOtherCD = TALKING_COOLDOWN;
@@ -426,8 +428,43 @@ public class NormalPersonAI : MonoBehaviour
 			case State.Dying:
 				Die();
 				break;
+
+			case State.Fighting:
+
+				if(_changeCD < 0)
+				{
+					if(Random.Range(0, 100) > 80)
+					{
+						_talkingSubject.ChangeState(State.Dying);
+						_talkingSubject.StopFighting();
+						StopFighting();
+						ChangeState(State.Wandering);
+					}
+					else
+					{
+						var talkingText = beliefControler.LeftLeaning ? "optimatium caput stercore" : "purgamentum init populist";
+
+						Helper.CreateTalkingText(camera, Color.black, transform, talkingText);
+					}
+
+					_changeCD = Random.Range(1f, 4f);
+				}
+
+				break;
 		}
     }
+
+	void StopFighting()
+	{
+		if(_line != null)
+		{
+			Factory.Instance.ReleaseTalkingLine(ref _line);
+		}
+
+		hat.enabled = false;
+
+		_talkingSubject = null;
+	}
 
 	void CheckKeepJob()
 	{
@@ -480,6 +517,10 @@ public class NormalPersonAI : MonoBehaviour
 		{
 			_worker.QuitJob();
 		}
+
+		var bloodStain = Factory.Instance.GetBloodStain();
+
+		bloodStain.transform.position = new Vector3() { x = transform.position.x, y = 1, z = transform.position.z };
 
 		Destroy(gameObject);
 	}
@@ -621,23 +662,39 @@ public class NormalPersonAI : MonoBehaviour
 	{
 		_speaker = null;
 		_needs.SocialNeed.Value += SPEECH_SOCIAL_BENFIT;
-		Factory.Instance.ReleaseaTalkingLine(ref _line);
+		Factory.Instance.ReleaseTalkingLine(ref _line);
 		ChangeState(State.Wandering);
 	}
 
-	bool WillingForSocialInteraction()
+	bool WantsToFight()
 	{
-		return _needs.SocialNeed.Value < _needs.SocialNeed.MaxValue * 0.8f;
+		if(_state != State.Wandering && _state != State.Idling)
+		{
+			return false;
+		}
+
+		var num = Random.Range(0, 100);
+
+		if (_needs.MoodValue == Needs.MoodLevel.Low && num >= 50)
+		{
+			return true;
+		}
+		else if(_needs.MoodValue == Needs.MoodLevel.Bottom)
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	bool CanTalk()
 	{
-		return _state == State.SeekingSocial || ((_state == State.Wandering || _state == State.Idling) && _talkingToOtherCD <= 0 && !DesperateForFood(_needs.FoodNeed) && WillingForSocialInteraction());
+		return _state == State.SeekingSocial || ((_state == State.Wandering || _state == State.Idling) && _talkingToOtherCD <= 0 && !DesperateForFood(_needs.FoodNeed));
 	}
 
 	public bool CanRevSpeech()
 	{
-		return _state == State.SeekingSocial || ((_state == State.Idling || _state == State.Wandering) && !DesperateForFood(_needs.FoodNeed) && WillingForSocialInteraction());
+		return _state == State.SeekingSocial || ((_state == State.Idling || _state == State.Wandering) && !DesperateForFood(_needs.FoodNeed));
 	}
 
 	void StopWork()
@@ -660,10 +717,49 @@ public class NormalPersonAI : MonoBehaviour
 	//Detect collisions between the GameObjects with Colliders attached
 	void OnTriggerEnter(Collider other)
 	{
-		if(CanTalk() && other.gameObject.tag == "Person")
+		if(other.gameObject.tag != "Person")
 		{
-			var otherPerson = other.gameObject.GetComponent<NormalPersonAI>();
+			return;
+		}
 
+		var otherPerson = other.gameObject.GetComponent<NormalPersonAI>();
+
+		if (WantsToFight() && otherPerson.WantsToFight())
+		{
+			if(beliefControler.LeftLeaning == otherPerson.beliefControler.LeftLeaning)
+			{
+				return;
+			}
+
+			hat.enabled = true;
+			hat.material.color = Color.black;
+
+			otherPerson.hat.enabled = true;
+			otherPerson.hat.material.color = Color.black;
+
+			_wanderingLeftCD = _changeCD;
+			otherPerson._wanderingLeftCD = otherPerson._changeCD;
+
+			_talkingSubject = otherPerson;
+			otherPerson._talkingSubject = this;
+
+			otherPerson._changeCD = Random.Range(1f, 4f);
+			_changeCD = Random.Range(1f, 4f);
+
+			_line = Factory.Instance.GetTalkingLine();
+
+			var lat = _line.GetComponent<LineAttachTo>();
+			lat.targetA = transform;
+			lat.targetB = otherPerson.transform;
+
+			var lr = _line.GetComponent<LineRenderer>();
+			lr.material.color = Color.black;
+
+			otherPerson.ChangeState(State.Fighting);
+			ChangeState(State.Fighting);
+		}
+		else if(CanTalk())
+		{
 			if (!otherPerson.CanTalk())
 			{
 				return;
@@ -723,7 +819,5 @@ public class NormalPersonAI : MonoBehaviour
 
 			transform.LookAt(otherPerson.transform);
 		}
-
-		return;
 	}
 }

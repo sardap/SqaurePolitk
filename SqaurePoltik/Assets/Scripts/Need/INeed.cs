@@ -7,7 +7,7 @@ public interface INeed
 {
 	float MaxValue { get; }
 
-	//float MoodModifer { get; }
+	float MoodModifer { get; }
 
 	float Value { get; set; }
 

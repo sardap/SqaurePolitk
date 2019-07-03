@@ -51,6 +51,14 @@ public class FoodNeed : INeed
 		}
 	}
 
+	public float MoodModifer
+	{
+		get
+		{
+			return 1f;
+		}
+	}
+
 	public FoodNeed()
 	{
 		Value = Util.RandomFloat(MAX_VALUE * 0.5f, MAX_VALUE);

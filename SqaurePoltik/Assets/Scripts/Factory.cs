@@ -219,12 +219,28 @@ public class Factory
 	GameObject _holder;
 	ResouceManager _talkingLines;
 	ResouceManager _busyTalking;
+	GameObject _bloodStainBluePrint;
+	GameObject _bloodStainHolder;
+	int _bloodStainCount;
+
+	Stack<GameObject> _bloodStains;
 
 	public Factory()
 	{
 		_holder = new GameObject();
+
+		_bloodStainHolder = new GameObject();
+
+		_bloodStainHolder.name = "BloodStains";
+
+		_bloodStainHolder.transform.parent = _holder.transform;
+
 		_talkingLines = new ResouceManager(new TalkingLineCreator(), _holder);
 		_busyTalking = new ResouceManager(new BusyTalkingCreator(), _holder);
+
+		_bloodStains = new Stack<GameObject>();
+
+		_bloodStainBluePrint = Resources.Load<GameObject>("BuildingAsec/BloodStain");
 
 		_holder.name = "Factory";
 
@@ -238,7 +254,7 @@ public class Factory
 		return _talkingLines.Get();
 	}
 
-	public void ReleaseaTalkingLine(ref GameObject line)
+	public void ReleaseTalkingLine(ref GameObject line)
 	{
 		var lr = line.transform.GetComponent<LineRenderer>();
 		_talkingLines.Return(line);
@@ -270,5 +286,28 @@ public class Factory
 	public int BusyTalkingTextCount()
 	{
 		return _busyTalking.HoldingCount + _busyTalking.LeasedCount;
+	}
+
+	public GameObject GetBloodStain()
+	{
+		if(_bloodStains.Count <= 1)
+		{
+			for(int i = 0; i < 10; i++)
+			{
+				var bloodStain = Object.Instantiate(_bloodStainBluePrint);
+
+				bloodStain.transform.parent = _bloodStainHolder.transform;
+				bloodStain.SetActive(false);
+
+				bloodStain.name += _bloodStainCount++;
+
+				_bloodStains.Push(bloodStain);
+			}
+		}
+
+		var result = _bloodStains.Pop();
+		result.SetActive(true);
+
+		return result;
 	}
 }
