@@ -256,6 +256,8 @@ public class Factory
 
 	public void ReleaseTalkingLine(ref GameObject line)
 	{
+		Debug.Assert(line != null);
+
 		var lr = line.transform.GetComponent<LineRenderer>();
 		_talkingLines.Return(line);
 		line = null;

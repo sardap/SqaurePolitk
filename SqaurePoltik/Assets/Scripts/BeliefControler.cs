@@ -153,6 +153,9 @@ public class BeliefControler : MonoBehaviour
 
 	void UpdatePassionLevel(float totalLeaning)
 	{
+		if (_passionLevel == EPassionLevel.Max)
+			return;
+
 		var totalLeaningAbs = System.Math.Abs(totalLeaning);
 
 		var maxBelief = MAX_RIGHT * _beliefs.Count;
@@ -360,7 +363,7 @@ public class BeliefControler : MonoBehaviour
 
 	void OnDestroy()
 	{
-		if(_passionLevel == EPassionLevel.Max)
+		if(_passionLevel == EPassionLevel.Max && _registred)
 			PeopleInfo.Instance.UnregsterMax(this);
 
 		PeopleInfo.Instance.UnregsterPerson(this);

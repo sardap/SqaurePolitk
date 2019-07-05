@@ -15,6 +15,6 @@ public class FloatUp : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-		transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + setp);
+		transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z + setp * Time.deltaTime);
     }
 }

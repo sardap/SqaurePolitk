@@ -14,7 +14,7 @@ public class NormalPersonAI : MonoBehaviour
 	const float SLEEP_STARVING_THRESHHOLD = 0.1f;
 	const float SPEECH_SOCIAL_BENFIT = SocialNeed.MAX_VALUE * 0.25f;
 	const float SPEAKING_SOCIAL_BENFIT = SocialNeed.MAX_VALUE * 0.5f;
-	const float SOCIAL_NEEDING_COOLDOWN = 20f;
+	const float SOCIAL_NEEDING_COOLDOWN = 40f;
 
 	public enum State
 	{
@@ -31,7 +31,8 @@ public class NormalPersonAI : MonoBehaviour
 		Sleeping,
 		Dying,
 		SeekingSocial,
-		Fighting
+		Fighting,
+		FactionFighting
 	}
 
 	public class StateMachineVoilation : System.Exception
@@ -61,7 +62,7 @@ public class NormalPersonAI : MonoBehaviour
 
 	static List<NormalPersonAI> personList = new List<NormalPersonAI>();
 
-	static readonly State[] MovableStates = new State[] {State.Wandering, State.RevSpeach, State.FindingFood, State.GoingToBed, State.SeekingSocial};
+	static readonly State[] MovableStates = new State[] {State.Wandering, State.RevSpeach, State.FindingFood, State.GoingToBed, State.SeekingSocial, State.Fighting};
 
 	State _state;
 	float _changeCD;
@@ -69,9 +70,11 @@ public class NormalPersonAI : MonoBehaviour
 	float _talkingToOtherCD;
 	float _workingCD;
 	float _wanderingLeftCD;
+	float _workingTimer;
 	NormalPersonAI _talkingSubject;
 	MaxJob _speaker;
 	GameObject _line;
+	Stack<GameObject> _fightingLine;
 	Stack<NormalPersonAI> _listeners = new Stack<NormalPersonAI>();
 	Worker _worker;
 	Needs _needs;
@@ -99,6 +102,31 @@ public class NormalPersonAI : MonoBehaviour
 		}
 	}
 
+	public bool LeaderReadyToFight
+	{
+		get
+		{
+			return _state == State.Working;
+		}
+	}
+
+	public bool Working
+	{
+		get
+		{
+			return _state == State.Working;
+		}
+	}
+
+	public bool HasJob
+	{
+		get
+		{
+			return _worker.CurrentState == Worker.State.HasJob;
+		}
+	}
+
+
 	// Start is called before the first frame update
 	void Start()
 	{
@@ -109,10 +137,24 @@ public class NormalPersonAI : MonoBehaviour
 		_worker = GetComponent<Worker>();
 		_needs = GetComponent<Needs>();
 		_factionCom = GetComponent<FactionCom>();
+
+		_fightingLine = new Stack<GameObject>();
 	}
 
 	void ChangeState(State newState)
 	{
+		Debug.Assert(!_prevousStates.Contains(State.Dying));
+
+		if(_state == State.Working && _worker.CurrentState == Worker.State.HasJob)
+		{
+			StopWork();
+		}
+
+		if (_state == State.Working && (newState != State.Wandering && newState != State.Dying))
+		{
+			throw new StateMachineVoilation(_state.ToString(), newState.ToString(), gameObject.name, _prevousStates);
+		}
+
 		if (_state == State.Talking && newState != State.FinshedTalking)
 		{
 			throw new StateMachineVoilation(_state.ToString(), newState.ToString(), gameObject.name, _prevousStates);
@@ -253,7 +295,7 @@ public class NormalPersonAI : MonoBehaviour
 					}
 					else if(_workingCD <= 0)
 					{
-						CheckKeepJob();
+						//CheckKeepJob();
 
 						if (_worker.CurrentState == Worker.State.Jobless)
 						{
@@ -288,9 +330,17 @@ public class NormalPersonAI : MonoBehaviour
 				if (_changeCD < 0 && _worker.CurrentState == Worker.State.Jobless)
 				{
 					GiveFollowerJob();
-					_changeCD = float.MaxValue;
-					StartWork();
-					ChangeState(State.Working);
+
+					_changeCD = SOCIAL_NEEDING_COOLDOWN;
+					if (_worker.CurrentState == Worker.State.HasJob)
+					{
+						StartWork();
+						ChangeState(State.Working);
+					}
+					{
+						StopSocialSeeking();
+						ChangeState(State.Wandering);
+					}
 				}
 				else if (_needs.SocialNeed.Value >= SocialNeed.MAX_VALUE * 0.8f)
 				{
@@ -348,17 +398,19 @@ public class NormalPersonAI : MonoBehaviour
 				break;
 
 			case State.Working:
+				_workingTimer += Time.deltaTime;
+
 				if (_worker.CurrentState == Worker.State.Jobless)
 				{
+					RemoveWorkingHat();
 					ChangeState(State.Wandering);
 					break;
 				}
 
 				_worker.Job.Step();
 
-				if (_changeCD <= 0)
+				if (_workingTimer > _worker.Job.Length)
 				{
-					StopWork();
 					ChangeState(State.Wandering);
 				}
 				break;
@@ -439,8 +491,11 @@ public class NormalPersonAI : MonoBehaviour
 				break;
 
 			case State.Fighting:
-
-				if(_changeCD < 0)
+				if (Vector3.Distance(_talkingSubject.transform.position, transform.position) > 1.5f)
+				{
+					agent.SetDestination(_talkingSubject.transform.position);
+				}
+				else if(_changeCD < 0)
 				{
 					if(Random.Range(0, 100) > 80)
 					{
@@ -453,10 +508,12 @@ public class NormalPersonAI : MonoBehaviour
 					{
 						var talkingText = beliefControler.LeftLeaning ? "optimatium caput stercore" : "purgamentum init populist";
 
-						Helper.CreateTalkingText(camera, Color.black, transform, talkingText);
-					}
+						var color = new Color32() { a = byte.MaxValue };
 
-					_changeCD = Random.Range(1f, 4f);
+						Helper.CreateTalkingText(camera, color, transform, talkingText);
+
+						_changeCD = Random.Range(1f, 4f);
+					}
 				}
 
 				break;
@@ -465,9 +522,14 @@ public class NormalPersonAI : MonoBehaviour
 
 	void StopFighting()
 	{
-		if(_line != null)
+		if(_fightingLine != null)
 		{
-			Factory.Instance.ReleaseTalkingLine(ref _line);
+			while(_fightingLine.Count > 0)
+			{
+				var top = _fightingLine.Peek();
+				Factory.Instance.ReleaseTalkingLine(ref top);
+				_fightingLine.Pop();
+			}
 		}
 
 		hat.enabled = false;
@@ -480,8 +542,11 @@ public class NormalPersonAI : MonoBehaviour
 		if (
 			_worker.Job != null && 
 			(
-				(beliefControler.PassionLevel == BeliefControler.EPassionLevel.High && typeof(FollowerJob) != _worker.Job.GetType()) ||
-				(beliefControler.PassionLevel == BeliefControler.EPassionLevel.Max && typeof(MaxJob) != _worker.Job.GetType())
+				beliefControler.PassionLevel == BeliefControler.EPassionLevel.High && 
+				(
+					typeof(FollowerJob) != _worker.Job.GetType() || 
+					typeof(MaxJob) != _worker.Job.GetType()
+				)
 			)
 		)
 		{
@@ -518,14 +583,28 @@ public class NormalPersonAI : MonoBehaviour
 		agent.SetDestination(target);
 	}
 
+	public void DieWhileWorking()
+	{
+		Debug.Assert(_worker.CurrentState == Worker.State.HasJob);
+		Debug.AssertFormat(_state == State.Working, "Expected Working Got {0} {1}", _state, LastFiveStates(_prevousStates));
+
+		ChangeState(State.Dying);
+	}
+
 	void Die()
 	{
 		Debug.LogFormat("Frame:{1} {0} DIED LAST 5 STATES: {2}", gameObject.name, Time.frameCount, LastFiveStates(_prevousStates));
 
-		if(_worker.CurrentState == Worker.State.HasJob)
+		if (_worker.CurrentState == Worker.State.HasJob)
 		{
 			_worker.QuitJob();
 		}
+		else
+		{
+			Debug.Assert(_worker.Job == null);
+		}
+
+		StopSocialSeeking();
 
 		var bloodStain = Factory.Instance.GetBloodStain();
 
@@ -583,7 +662,8 @@ public class NormalPersonAI : MonoBehaviour
 		{
 			beliefControler = beliefControler,
 			agent = agent,
-			FactionCom = _factionCom
+			FactionCom = _factionCom,
+			Camera = camera
 		};
 
 		var cloest = PeopleInfo.Instance.FindClosetToFollow(newJob, beliefControler, _factionCom);
@@ -593,17 +673,16 @@ public class NormalPersonAI : MonoBehaviour
 			return;
 		}
 
+		_factionCom.FollowerJob = newJob;
 		newJob.following = cloest.transform;
 
 		_worker.GiveJob(newJob);
-
 	}
 
 	void FindJob()
 	{
 		if (beliefControler.PassionLevel == BeliefControler.EPassionLevel.Max)
 		{
-
 			var newJob = new MaxJob()
 			{
 				agent = agent,
@@ -709,18 +788,53 @@ public class NormalPersonAI : MonoBehaviour
 	void StopWork()
 	{
 		_worker.Job.Stop();
+		RemoveWorkingHat();
+	}
+
+	void RemoveWorkingHat()
+	{
 		hat.enabled = false;
 		_workingCD = WORKING_COOLDOWN;
+		_workingTimer = 0;
 	}
 
 	void StartWork()
 	{
 		_worker.Job.Start();
 
-		_changeCD = _worker.Job.Length;
-
 		hat.enabled = true;
 		hat.material.color = _worker.Job.HatColor;
+	}
+
+	void StartFight(NormalPersonAI otherPerson, bool makeLine, bool hatChange = true)
+	{
+		if (hatChange)
+		{
+			hat.enabled = true;
+			hat.material.color = Color.black;
+		}
+
+		_wanderingLeftCD = _changeCD;
+
+		_talkingSubject = otherPerson;
+
+		_changeCD = Random.Range(1f, 4f);
+
+		if (makeLine)
+		{
+			var newLine = Factory.Instance.GetTalkingLine();
+
+			var lat = newLine.GetComponent<LineAttachTo>();
+			lat.targetA = transform;
+			lat.targetB = otherPerson.transform;
+
+			var lr = newLine.GetComponent<LineRenderer>();
+			lr.material.color = Color.black;
+
+			_fightingLine.Push(newLine);
+		}
+
+		ChangeState(State.Fighting);
 	}
 
 	//Detect collisions between the GameObjects with Colliders attached
@@ -733,6 +847,12 @@ public class NormalPersonAI : MonoBehaviour
 
 		var otherPerson = other.gameObject.GetComponent<NormalPersonAI>();
 
+
+		if(Vector3.Distance(otherPerson.transform.position, transform.position) > 3f)
+		{
+			return;
+		}
+
 		if (WantsToFight() && otherPerson.WantsToFight())
 		{
 			if(beliefControler.LeftLeaning == otherPerson.beliefControler.LeftLeaning)
@@ -740,32 +860,8 @@ public class NormalPersonAI : MonoBehaviour
 				return;
 			}
 
-			hat.enabled = true;
-			hat.material.color = Color.black;
-
-			otherPerson.hat.enabled = true;
-			otherPerson.hat.material.color = Color.black;
-
-			_wanderingLeftCD = _changeCD;
-			otherPerson._wanderingLeftCD = otherPerson._changeCD;
-
-			_talkingSubject = otherPerson;
-			otherPerson._talkingSubject = this;
-
-			otherPerson._changeCD = Random.Range(1f, 4f);
-			_changeCD = Random.Range(1f, 4f);
-
-			_line = Factory.Instance.GetTalkingLine();
-
-			var lat = _line.GetComponent<LineAttachTo>();
-			lat.targetA = transform;
-			lat.targetB = otherPerson.transform;
-
-			var lr = _line.GetComponent<LineRenderer>();
-			lr.material.color = Color.black;
-
-			otherPerson.ChangeState(State.Fighting);
-			ChangeState(State.Fighting);
+			StartFight(otherPerson, true);
+			otherPerson.StartFight(this, false);
 		}
 		else if(CanTalk())
 		{
@@ -829,4 +925,19 @@ public class NormalPersonAI : MonoBehaviour
 			transform.LookAt(otherPerson.transform);
 		}
 	}
+
+	void OnMouseDown()
+	{
+		Debug.LogFormat("Frame:{1} {0} Killing ", gameObject.name, Time.frameCount);
+
+		if (_state == State.Working)
+		{
+			DieWhileWorking();
+		}
+		else if(_state == State.Wandering || _state == State.Idling)
+		{
+			ChangeState(State.Dying);
+		}
+	}
+
 }

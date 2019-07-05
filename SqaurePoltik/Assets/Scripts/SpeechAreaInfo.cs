@@ -65,10 +65,7 @@ public class SpeechAreaInfo : MonoBehaviour
 
 	public List<NormalPersonAI> GetPeople()
 	{
-		if (_state != States.Occupied)
-		{
-			throw new GetPeopleWithoutOccpying();
-		}
+		Debug.Assert(_state == States.Occupied);
 
 		colRego.inside.RemoveWhere(i => i == null);
 

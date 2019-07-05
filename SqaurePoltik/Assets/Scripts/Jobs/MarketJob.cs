@@ -53,7 +53,7 @@ class MarketJob : IJobAction
 	{
 		get
 		{
-			return 70f;
+			return Market.FoodCount < STOP_MAKING_FOOD_THREASHOLD ? float.MaxValue : 70f;
 		}
 	}
 

@@ -63,10 +63,9 @@ public static class Helper
 		return min;
 	}
 
-	public static T FindClosest<T>(IEnumerable<T> toSerach, Transform finder) where T : Component
+	public static T FindClosest<T>(IEnumerable<T> toSerach, Transform finder, float minDist = Mathf.Infinity) where T : Component
 	{
 		Transform tMin = null;
-		float minDist = Mathf.Infinity;
 		Vector3 currentPos = finder.position;
 		foreach (var com in toSerach)
 		{

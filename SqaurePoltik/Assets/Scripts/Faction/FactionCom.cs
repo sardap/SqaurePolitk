@@ -7,18 +7,10 @@ public class FactionCom : MonoBehaviour
 	public Faction Faction { get; set; }
 
 	public BeliefControler beliefControler;
+	public GameObject factionBubble;
+	public NormalPersonAI normalPersonAI;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+	public FollowerJob FollowerJob { get; set; }
 
 	void OnDestroy()
 	{

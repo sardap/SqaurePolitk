@@ -15,7 +15,8 @@ public class MaxJob : IJobAction
 		WalkingToSpeechArea,
 		GivingSpeech,
 		LookingForFight,
-		FinshedSpeech
+		FinshedSpeech,
+		FactionWar
 	}
 
 	SpeechAreaInfo _speechArea;
@@ -27,7 +28,9 @@ public class MaxJob : IJobAction
 
 	public BeliefControler beliefControler;
 	public NavMeshAgent agent;
+
 	public Camera Camera { get; set; }
+
 	public FactionCom FactionCom { get; set; }
 
 	public Color32 HatColor
@@ -42,7 +45,12 @@ public class MaxJob : IJobAction
 	{
 		get
 		{
-			return _state == State.FinshedSpeech ? 0 : 60f;
+			if(_state == State.FactionWar)
+			{
+				return float.MaxValue;
+			}
+
+			return _state == State.FinshedSpeech ? 0 : 120f;
 		}
 	}
 
@@ -61,7 +69,7 @@ public class MaxJob : IJobAction
 
 	public void Quit()
 	{
-		FactionCom.Faction.Destroy();
+		Stop();
 	}
 
 	public void Start()
@@ -77,7 +85,7 @@ public class MaxJob : IJobAction
 		}
 		else
 		{
-
+			_state = State.None;
 		}
 	}
 
@@ -116,8 +124,35 @@ public class MaxJob : IJobAction
 
 			case State.FinshedSpeech:
 				Stop();
+				_state = State.None;
+				break;
+
+			case State.FactionWar:
+				_talkingCD -= Time.deltaTime;
+
+				if (_talkingCD <= 0)
+				{
+					Helper.CreateTalkingText(Camera, beliefControler.BeliefColor, agent.transform, "Non gradum retro");
+					_talkingCD = 0.5f;
+				}
+
+				if (!FactionCom.Faction.Fighting)
+				{
+					_state = State.None;
+				}
+
 				break;
 		}
+	}
+
+	public void StartFactionFight()
+	{
+		if(_state == State.GivingSpeech || _state == State.WalkingToSpeechArea)
+		{
+			Stop();
+		}
+
+		_state = State.FactionWar;
 	}
 
 	void FindListener()

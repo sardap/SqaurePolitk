@@ -63,7 +63,11 @@ class PeopleInfo
 				Leader = beliefControler.GetComponent<FactionCom>()
 			};
 
+			newFact.Leader.factionBubble.SetActive(true);
+
 			newFact.Leader.Faction = newFact;
+
+			Debug.LogFormat("Frame:{0} {1} LEADER OF FACTION ", Time.frameCount, beliefControler.gameObject.name);
 
 			_factionLst.Add(beliefControler, newFact);
 		}
@@ -72,7 +76,9 @@ class PeopleInfo
 	public void UnregsterMax(BeliefControler beliefControler)
 	{
 		Debug.Assert(_factionLst.ContainsKey(beliefControler));
+
 		_factionLst[beliefControler].Destroy();
+
 		_factionLst.Remove(beliefControler);
 	}
 
@@ -105,7 +111,7 @@ class PeopleInfo
 
 	public GameObject FindClosetToFollow(FollowerJob newJob, BeliefControler beliefControler, FactionCom factionCom)
 	{
-		var applcableFactions = _factionLst.Values.Where(i => i.Leader.beliefControler.LeftLeaning == beliefControler.LeftLeaning);
+		var applcableFactions = _factionLst.Values.Where(i => i.Leader.beliefControler.LeftLeaning == beliefControler.LeftLeaning && i.Leader.normalPersonAI.HasJob);
 
 		if(applcableFactions.Count() == 0)
 		{
@@ -130,7 +136,7 @@ class PeopleInfo
 			canadiets.RemoveAt(canadiets.IndexOfValue(canadiets.Last().Value));
 		}
 
-		tMin = Helper.FindClosest(canadiets.Values.Select(i => i.Leader), beliefControler.transform).Faction;
+		tMin = Helper.FindClosest(canadiets.Values.Select(i => i.Leader), factionCom.normalPersonAI.Home.door).Faction;
 
 		factionCom.Faction = tMin;
 		tMin.AddMember(factionCom);
