@@ -26,6 +26,11 @@ public class PlayerController : MonoBehaviour
 			}
 		}
 
+		if (Input.GetMouseButtonDown(1))
+		{
+			PeopleInfo.Instance.SetActiveCard(null);
+		}
+
 		if (Input.GetKeyDown(KeyCode.Minus))
 		{
 			Time.timeScale /= 2f;

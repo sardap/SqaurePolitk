@@ -57,6 +57,14 @@ class MarketJob : IJobAction
 		}
 	}
 
+	public string JobTitle
+	{
+		get
+		{
+			return "Market Salesmen";
+		}
+	}
+
 	public void Start()
 	{
 		_talkingCD = 0;

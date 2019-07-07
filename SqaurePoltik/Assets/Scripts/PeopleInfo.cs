@@ -28,6 +28,7 @@ class PeopleInfo
 	List<BeliefControler> _allBeliefControlers = new List<BeliefControler>();
 	Dictionary<BeliefControler, Faction> _factionLst = new Dictionary<BeliefControler, Faction>();
 	HashSet<BeliefControler> _lookingForSocialInteraction = new HashSet<BeliefControler>();
+	ICardInfo _activeCard;
 
 	public float MaxTotalLeaning
 	{
@@ -45,8 +46,21 @@ class PeopleInfo
 		}
 	}
 
+	public ICardInfo SelectedCard
+	{
+		get
+		{
+			return _activeCard;
+		}
+	}
+
 	PeopleInfo()
 	{
+	}
+
+	public void SetActiveCard(ICardInfo cardInfo)
+	{
+		_activeCard = cardInfo;
 	}
 
 	public void RegsiterPerson(BeliefControler beliefControler)
@@ -60,7 +74,8 @@ class PeopleInfo
 		{
 			var newFact = new Faction(beliefControler.TotalLeaning)
 			{
-				Leader = beliefControler.GetComponent<FactionCom>()
+				Leader = beliefControler.GetComponent<FactionCom>(),
+				Name = beliefControler.GetComponent<CardInfoCom>().PersonName + " Party"
 			};
 
 			newFact.Leader.factionBubble.SetActive(true);

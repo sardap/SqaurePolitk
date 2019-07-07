@@ -72,6 +72,14 @@ public class FollowerJob : IJobAction
 		}
 	}
 
+	public string JobTitle
+	{
+		get
+		{
+			return "Party Member";
+		}
+	}
+
 	public bool JobReady()
 	{
 		if (following == null || FactionCom.Faction.Fighting)
@@ -85,6 +93,7 @@ public class FollowerJob : IJobAction
 	public void Quit()
 	{
 		Stop();
+		FactionCom.Faction.RemoveMember(FactionCom);
 		_quit = true;
 	}
 

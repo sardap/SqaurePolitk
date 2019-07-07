@@ -67,6 +67,14 @@ public class MaxJob : IJobAction
 		}
 	}
 
+	public string JobTitle
+	{
+		get
+		{
+			return "Poltion";
+		}
+	}
+
 	public void Quit()
 	{
 		Stop();

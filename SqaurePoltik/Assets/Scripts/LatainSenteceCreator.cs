@@ -26,35 +26,62 @@ class LatainSenteceCreator
 	}
 
 	ConcurrentStack<string> _sentence = new ConcurrentStack<string>();
-	Semaphore _wakeUp = new Semaphore(1, int.MaxValue);
+	Semaphore _sentenceWakeUp = new Semaphore(1, int.MaxValue);
+	ConcurrentStack<string> _createdNames = new ConcurrentStack<string>();
+	Semaphore _nameWakeUp = new Semaphore(1, int.MaxValue);
 	string _dataPath;
+	IEnumerable<string> _allNames;
 
 	LatainSenteceCreator()
 	{
-		Thread thread = new Thread(new ThreadStart(SentenceProducer));
 		_dataPath = Application.dataPath;
+
+		_sentenceWakeUp.Release();
+		_nameWakeUp.Release();
+
+		Thread thread = new Thread(new ThreadStart(SentenceProducer));
 		thread.Start();
+
+		thread = new Thread(new ThreadStart(NameProducer));
+		thread.Start();
+
+		_allNames = LoadStringsFromCSV("/Resources/Text/Names.csv");
+
 	}
 
 	public string GetSentence()
 	{
 		if(!_sentence.TryPop(out string result))
 		{
-			_wakeUp.Release();
+			_sentenceWakeUp.Release();
 			return "";
 		}
 
 		if (_sentence.Count <= 3)
-			_wakeUp.Release();
+			_sentenceWakeUp.Release();
 
 		return result;
 	}
 
-	void SentenceProducer()
+	public string GetName()
+	{
+		if(!_createdNames.TryPop(out string result))
+		{
+			_nameWakeUp.Release();
+			return CreateName(_allNames);
+		}
+
+		if (_createdNames.Count <= 3)
+			_nameWakeUp.Release();
+
+		return result;
+	}
+
+	IEnumerable<string> LoadStringsFromCSV(string path)
 	{
 		List<string> latinWords = new List<string>();
 
-		using (var reader = new StreamReader(_dataPath + "/Resources/Text/LatinWords.csv"))
+		using (var reader = new StreamReader(_dataPath + path))
 		{
 			while (!reader.EndOfStream)
 			{
@@ -64,22 +91,30 @@ class LatainSenteceCreator
 			}
 		}
 
+		return latinWords;
+	}
+
+	void SentenceProducer()
+	{
+		var latinWords = LoadStringsFromCSV("/Resources/Text/LatinWords.csv");
+
 		string CreateSentence()
 		{
 			var result = "";
 
 			for (int i = 0; i < Util.SharpRandom.Next(10); i++)
 			{
-				result = result + " " + latinWords[Util.SharpRandom.Next(0, latinWords.Count)];
+				result = result + " " + Util.RandomElement(latinWords);
 			}
 
 			return result;
 		}
 
+
 		int n;
 		while (true)
 		{
-			_wakeUp.WaitOne();
+			_sentenceWakeUp.WaitOne();
 			n = System.Math.Max(10, Factory.Instance.BusyTalkingTextCount());
 			for(int i = 0; i < n - _sentence.Count; i++)
 			{
@@ -88,7 +123,36 @@ class LatainSenteceCreator
 		}
 	}
 
+	string CreateName(IEnumerable<string> allNames)
+	{
+		var fullName = new HashSet<string>();
 
-	
+		while (fullName.Count < 3)
+		{
+			fullName.Add(Util.RandomElement(allNames));
+		}
+
+		return fullName.Aggregate((a, b) => a + " " + b);
+	}
+
+
+	void NameProducer()
+	{
+		var names = LoadStringsFromCSV("/Resources/Text/Names.csv");
+
+		int n;
+		while (true)
+		{
+			_nameWakeUp.WaitOne();
+			n = 10;
+			for (int i = 0; i < n - _sentence.Count; i++)
+			{
+				_sentence.Push(CreateName(names));
+			}
+		}
+	}
+
+
+
 
 }

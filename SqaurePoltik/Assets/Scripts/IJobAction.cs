@@ -9,6 +9,8 @@ public interface IJobAction
 {
 	float Length { get; }
 
+	string JobTitle { get; }
+
 	Worker Worker { get; set; }
 
 	bool JobReady();

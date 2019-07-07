@@ -8,38 +8,19 @@ public class GlobalLeaningUpdate : MonoBehaviour
 {
 	public const float UPDATE_INTERVAL = 1;
 
-	public Slider slider;
 	public TextMeshProUGUI leftText;
 	public TextMeshProUGUI rightText;
+	public LeaningSlider leaningSlider;
 
 	float _nextUpdate;
 
 	public void UpdateBar()
 	{
 		var peopleInfo = PeopleInfo.Instance;
+		var result = leaningSlider.UpdateBar(peopleInfo.TotalLeaning, peopleInfo.MaxTotalLeaning);
 
-		var leaning = (peopleInfo.TotalLeaning / peopleInfo.MaxTotalLeaning);
-		slider.value = -leaning;
-
-		float leftPercent;
-		float rightPercent;
-
-		if(leaning > 0)
-		{
-			rightPercent = (leaning + 1f) / 2f;
-			leftPercent = (2 - (2 * rightPercent)) / 2;
-		}
-		else
-		{
-			leaning = System.Math.Abs(leaning);
-
-			leftPercent = (leaning + 1f) / 2f;
-			rightPercent = (2 - (2 * leftPercent)) / 2;
-		}
-
-		leftText.text = (int)System.Math.Round(leftPercent * 100) + "%";
-		rightText.text = (int)System.Math.Round(rightPercent * 100) + "%";
-
+		leftText.text = result.Left;
+		rightText.text = result.Right;
 	}
 
 	void Start()

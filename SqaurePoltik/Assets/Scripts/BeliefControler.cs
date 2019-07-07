@@ -120,6 +120,14 @@ public class BeliefControler : MonoBehaviour
 		}
 	}
 
+	public int BeliefCount
+	{
+		get
+		{
+			return _beliefs.Count;
+		}
+	}
+
 	public Color32 BeliefColor
 	{
 		get

@@ -925,19 +925,4 @@ public class NormalPersonAI : MonoBehaviour
 			transform.LookAt(otherPerson.transform);
 		}
 	}
-
-	void OnMouseDown()
-	{
-		Debug.LogFormat("Frame:{1} {0} Killing ", gameObject.name, Time.frameCount);
-
-		if (_state == State.Working)
-		{
-			DieWhileWorking();
-		}
-		else if(_state == State.Wandering || _state == State.Idling)
-		{
-			ChangeState(State.Dying);
-		}
-	}
-
 }

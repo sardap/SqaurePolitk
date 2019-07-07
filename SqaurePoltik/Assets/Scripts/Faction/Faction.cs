@@ -41,6 +41,12 @@ public class Faction
 		}
 	}
 
+	public string Name
+	{
+		get;
+		set;
+	}
+
 	List<FactionCom> MembersReadyToFight
 	{
 		get
@@ -135,9 +141,6 @@ public class Faction
 
 	public FactionCom GetNextTarget(FactionCom member)
 	{
-		Debug.Assert(MembersReadyToFight.Count > 0);
-		Debug.AssertFormat(MembersReadyToFight.Contains(member), "Name {0} Is not ready to fight GetNext Working? {1} Memebers: {2}", member.gameObject.name, member.normalPersonAI.Working, _members.Select(i => i.gameObject.name).Aggregate((a, b) => a + "," + b));
-		Debug.Assert(_fightingWith != null);
 		Debug.Assert(_fightingWith.Fighting && Fighting);
 
 		var fightingMembers = _fightingWith.MembersReadyToFight;
