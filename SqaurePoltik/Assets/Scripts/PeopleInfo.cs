@@ -68,15 +68,21 @@ class PeopleInfo
 		_allBeliefControlers.Add(beliefControler);
 	}
 
-	public void RegstierMax(BeliefControler beliefControler)
+	public void RegstierMax(BeliefControler beliefControler, GameObject crown)
 	{
 		if (!_factionLst.ContainsKey(beliefControler))
 		{
+			var factionCom = beliefControler.GetComponent<FactionCom>();
+
 			var newFact = new Faction(beliefControler.TotalLeaning)
 			{
-				Leader = beliefControler.GetComponent<FactionCom>(),
+				Leader = factionCom,
 				Name = beliefControler.GetComponent<CardInfoCom>().PersonName + " Party"
 			};
+
+			crown.SetActive(true);
+
+			crown.GetComponentsInChildren<Renderer>().ToList().ForEach(i => i.material.color = newFact.FactionColor);
 
 			newFact.Leader.factionBubble.SetActive(true);
 

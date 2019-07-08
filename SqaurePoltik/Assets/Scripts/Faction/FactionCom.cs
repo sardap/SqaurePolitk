@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class FactionCom : MonoBehaviour
 {
-	public Faction Faction { get; set; }
-
 	public BeliefControler beliefControler;
 	public GameObject factionBubble;
 	public NormalPersonAI normalPersonAI;
+
+	public Faction Faction { get; set; }
 
 	public FollowerJob FollowerJob { get; set; }
 

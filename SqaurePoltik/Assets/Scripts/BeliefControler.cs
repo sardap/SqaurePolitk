@@ -92,6 +92,7 @@ public class BeliefControler : MonoBehaviour
 
 
 	public MeshRenderer meshRenderer;
+	public GameObject crown;
 	public float convincingVal;
 
 	Dictionary<string, IBelief> _beliefs = new Dictionary<string, IBelief>();
@@ -187,7 +188,7 @@ public class BeliefControler : MonoBehaviour
 			newState = EPassionLevel.Max;
 			if (!_registred)
 			{
-				PeopleInfo.Instance.RegstierMax(this);
+				PeopleInfo.Instance.RegstierMax(this, crown);
 				_registred = true;
 			}
 		}
