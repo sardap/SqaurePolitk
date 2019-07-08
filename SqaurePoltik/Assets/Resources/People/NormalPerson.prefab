@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4825731535393938117}
   - component: {fileID: 1969094279102539635}
   - component: {fileID: 4575720875203982867}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: FactionBubble
   m_TagString: FactionBubble
   m_Icon: {fileID: 0}

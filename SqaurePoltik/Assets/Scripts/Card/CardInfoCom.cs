@@ -39,7 +39,7 @@ public class CardInfoCom : MonoBehaviour
     {
 		_factionCom = GetComponent<FactionCom>();
 
-		if(PeopleInfo.Instance.SelectedCard != null && PeopleInfo.Instance.SelectedCard.Name != _name && outline.activeSelf)
+		if(outline.activeSelf && ((PeopleInfo.Instance.SelectedCard != null && PeopleInfo.Instance.SelectedCard.Name != _name) || PeopleInfo.Instance.SelectedCard == null) )
 		{
 			outline.SetActive(false);
 		}

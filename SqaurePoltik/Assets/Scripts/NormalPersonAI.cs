@@ -595,6 +595,19 @@ public class NormalPersonAI : MonoBehaviour
 	{
 		Debug.LogFormat("Frame:{1} {0} DIED LAST 5 STATES: {2}", gameObject.name, Time.frameCount, LastFiveStates(_prevousStates));
 
+		var bloodStain = Factory.Instance.GetBloodStain();
+
+		bloodStain.transform.position = new Vector3() { x = transform.position.x, y = 1, z = transform.position.z };
+		bloodStain.GetComponent<CardInfoDeadCom>().PopluateValue
+		(
+			GetComponent<CardInfoCom>().PersonName,
+			_factionCom.Faction,
+			_worker,
+			beliefControler,
+			_needs
+		);
+
+
 		if (_worker.CurrentState == Worker.State.HasJob)
 		{
 			_worker.QuitJob();
@@ -605,10 +618,6 @@ public class NormalPersonAI : MonoBehaviour
 		}
 
 		StopSocialSeeking();
-
-		var bloodStain = Factory.Instance.GetBloodStain();
-
-		bloodStain.transform.position = new Vector3() { x = transform.position.x, y = 1, z = transform.position.z };
 
 		Destroy(gameObject);
 	}
