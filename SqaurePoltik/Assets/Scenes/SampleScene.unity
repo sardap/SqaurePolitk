@@ -3957,7 +3957,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 46071623}
-  numberOfBuildings: 200
+  numberOfBuildings: 100
   buildingTransform: {fileID: 1762841479}
   peopleTransform: {fileID: 1353670354}
   globalLeaningUpdate: {fileID: 41171069}
@@ -5179,7 +5179,26 @@ PrefabInstance:
       propertyPath: followTrans
       value: 
       objectReference: {fileID: 46071625}
-    m_RemovedComponents: []
+    - target: {fileID: 7759539532047271699, guid: 7bc12eccea1e5c94388648beb9c2b1e3,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6801533069657864139, guid: 7bc12eccea1e5c94388648beb9c2b1e3,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4917983930041901369, guid: 7bc12eccea1e5c94388648beb9c2b1e3,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 7759539532047271699, guid: 7bc12eccea1e5c94388648beb9c2b1e3, type: 3}
+    - {fileID: 6801533069657864139, guid: 7bc12eccea1e5c94388648beb9c2b1e3, type: 3}
+    - {fileID: 4917983930041901369, guid: 7bc12eccea1e5c94388648beb9c2b1e3, type: 3}
+    - {fileID: 2345245517774016364, guid: 7bc12eccea1e5c94388648beb9c2b1e3, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 7bc12eccea1e5c94388648beb9c2b1e3, type: 3}
 --- !u!1 &1482189097
 GameObject:

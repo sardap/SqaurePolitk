@@ -407,6 +407,11 @@ public class NormalPersonAI : MonoBehaviour
 					break;
 				}
 
+				if (_needs.Die)
+				{
+					DieWhileWorking();
+				}
+
 				_worker.Job.Step();
 
 				if (_workingTimer > _worker.Job.Length)
@@ -416,6 +421,11 @@ public class NormalPersonAI : MonoBehaviour
 				break;
 
 			case State.FindingFood:
+				if (_needs.Die)
+				{
+					Die();
+				}
+
 				if (ReachedTarget(0.5f))
 				{
 					if (_targetMarket.ConsumeFood(_needs.FoodNeed))
@@ -437,6 +447,11 @@ public class NormalPersonAI : MonoBehaviour
 
 			case State.ConsumingFood:
 				_talkingCD -= Time.deltaTime;
+
+				if (_needs.Die)
+				{
+					Die();
+				}
 
 				if (_talkingCD <= 0)
 				{

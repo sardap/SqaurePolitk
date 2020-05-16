@@ -39,7 +39,7 @@ public class FoodNeed : INeed
 	{
 		get
 		{
-			return 0.5f / 6f;
+			return 0.5f / 4f;
 		}
 	}
 

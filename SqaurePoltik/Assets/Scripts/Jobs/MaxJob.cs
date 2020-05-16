@@ -50,6 +50,11 @@ public class MaxJob : IJobAction
 				return float.MaxValue;
 			}
 
+			if(_state == State.None)
+			{
+				return 0;
+			}
+
 			return _state == State.FinshedSpeech ? 0 : 120f;
 		}
 	}

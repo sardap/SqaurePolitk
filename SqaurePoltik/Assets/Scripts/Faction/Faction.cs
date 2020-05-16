@@ -47,14 +47,21 @@ public class Faction
 		set;
 	}
 
+	public bool LeaderReadyToFight
+	{
+		get
+		{
+			return Leader.normalPersonAI.LeaderReadyToFight;
+		}
+	}
+
 	List<FactionCom> MembersReadyToFight
 	{
 		get
 		{
 			var result = _members.Where(i => CanFactionFight(i)).ToList();
 
-			if (Leader != null && Leader.normalPersonAI.LeaderReadyToFight)
-				result.Add(Leader);
+			result.Add(Leader);
 
 			return result;
 		}
@@ -102,6 +109,11 @@ public class Faction
 	public void StartFight(Faction other)
 	{
 		Debug.Assert(!Fighting);
+
+		if (!LeaderReadyToFight || !other.LeaderReadyToFight)
+		{
+			return;
+		}
 
 		var a = other.MembersReadyToFight.ToList();
 		var b = MembersReadyToFight.ToList();
